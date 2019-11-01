@@ -87,7 +87,7 @@ type(add_numbers(1, 2))  # int
 
 ## Recovering from `ReturnTypeError`s
 
-Because the function has to be executed to enforce the return value, the invalid value is stored on the exception. This makes it possible to recover from `ReturnTypeError`s programatically.
+Because the function has to be executed to enforce the return value, the invalid value is stored on the exception. This makes it possible to recover from `ReturnTypeError`s programatically. Exceptions are in `typen.exceptions`
 
 ```python
 @enforce_type_hints
