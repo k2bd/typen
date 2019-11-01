@@ -1,6 +1,6 @@
 from functools import wraps
 
-from typen.enforcer import Enforcer
+from typen._enforcer import Enforcer
 
 
 def enforce_type_hints(func):
