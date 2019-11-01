@@ -3,6 +3,9 @@
 This package supplies simple decorators to enforce type hints on function parameters and return types.
 
 ```python
+from typen import enforce_type_hints
+
+
 @enforce_type_hints
 def halve_integer(a: int) -> float:
     return a / 2
@@ -56,6 +59,9 @@ def add_numbers(
 Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception. Without strict enforcement, parameters and return values without type hints can have any value.
 
 ```python
+from typen import strict_type_hints
+
+
 @strict_type_hints
 def add_numbers(a, b: float) -> float:  # UnspecifiedParameterTypeError
     return a + b
