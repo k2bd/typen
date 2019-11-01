@@ -40,7 +40,7 @@ def complicated_function(
 
 ## Default Values
 
-Valid default values are enforced as well.
+Valid default values are enforced as well. `ParameterTypeError`s for default values are raised at decoration time.
 
 ```python
 @enforce_type_hints
