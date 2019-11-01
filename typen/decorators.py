@@ -1,4 +1,6 @@
-from strong_type_hints.enforcer import Enforcer
+from functools import wraps
+
+from typen.enforcer import Enforcer
 
 
 def enforce_type_hints(func):
@@ -25,6 +27,7 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
             require_return=require_return,
         )
 
+        @wraps(func)
         def new_func(*args, **kwargs):
             enforcer.verify_args(args, kwargs)
             result = func(*args, **kwargs)
@@ -32,5 +35,5 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
             return result
 
         return new_func
-    
+
     return inner

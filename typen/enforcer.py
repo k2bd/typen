@@ -2,7 +2,7 @@ import inspect
 
 from traits.api import Any, HasTraits, TraitError
 
-from strong_type_hints.exceptions import (
+from typen.exceptions import (
     ParameterTypeError,
     ReturnTypeError,
     UnspecifiedParameterTypeError,
