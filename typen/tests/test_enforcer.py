@@ -122,8 +122,6 @@ class TestEnforcer(unittest.TestCase):
             str(err.exception)
         )
 
-        enforcer.verify_args(["y", "cc"], {"d": 10, "c": 200})
-
 
 class TestStrictEnforcer(unittest.TestCase):
     pass
