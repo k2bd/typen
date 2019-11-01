@@ -21,7 +21,9 @@ give_int(1)  # 1
 give_int("a")  # ReturnTypeError
 ```
 
-[Trait](https://github.com/enthought/traits) types can also be used to define complex patterns in arguments
+## Trait Type Hints
+
+[Trait](https://github.com/enthought/traits) types can also be used to define complex patterns in type hints
 
 ```python
 from traits.api import Either, Enum, Instance, Int, Str, Tuple
