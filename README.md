@@ -40,7 +40,7 @@ def complicated_function(
 
 ## Default Values
 
-Valid default values are enforced as well.
+Valid default values are enforced as well. `ParameterTypeError`s for default values are raised at decoration time.
 
 ```python
 @enforce_type_hints
@@ -69,7 +69,7 @@ def add_numbers(a: float, b: float):  # UnspecifiedReturnTypeError
 
 ## Coercion
 
-Values are enforced to types based on [Trait type coercion](https://docs.enthought.com/traits/traits_user_manual/defining.html#trait-type-coercion) - they are not actually explicitly coerced.
+Values are enforced to types based on [Trait type coercion](https://docs.enthought.com/traits/traits_user_manual/defining.html#trait-type-coercion). Casting behaviour is not added to the function:
 
 ```python
 @enforce_type_hints
