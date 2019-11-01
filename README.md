@@ -69,7 +69,7 @@ def add_numbers(a: float, b: float):  # UnspecifiedReturnTypeError
 
 ## Coercion
 
-Values are enforced to types based on coercibility - they are not actually explicitly coerced.
+Values are enforced to types based on [Trait type coercion](https://docs.enthought.com/traits/traits_user_manual/defining.html#trait-type-coercion) - they are not actually explicitly coerced.
 
 ```python
 @enforce_type_hints
