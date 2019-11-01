@@ -51,7 +51,7 @@ def add_numbers(
 
 ## Strict Enforcement
 
-Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception.
+Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception. Without strict enforcement, parameters and return values without type hints can have any value.
 
 ```python
 @strict_type_hints
