@@ -96,6 +96,24 @@ class TestEnforceTypeHints(unittest.TestCase):
             str(err.exception)
         )
 
+    def test_enforce_type_hints_on_init_method(self):
+        class ExClass:
+            @enforce_type_hints
+            def __init__(self, a: int, b: str):
+                self.a = a
+                self.b = b
+
+        ExClass(1, "b")
+
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass("a", "b")
+
+        self.assertEqual(
+            "The 'a' parameter of '__init__' must be <class 'int'>, "
+            "but a value of 'a' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
     def test_enforce_type_hints_on_method(self):
         class ExClass:
             def __init__(self, a: int, b: int):
@@ -103,14 +121,68 @@ class TestEnforceTypeHints(unittest.TestCase):
                 self.b = b
 
             @enforce_type_hints
-            def ex_method(self, c: int) -> int:
-                return self.a + self.b + c
+            def ex_method(self, c: int, d) -> int:
+                return self.a + self.b + c + d
 
         inst = ExClass(1, 2)
-        inst.ex_method(6)
+        self.assertEqual(
+            inst.ex_method(6, 0), 9
+        )
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.ex_method(1.0, 2)
+
+        self.assertEqual(
+            "The 'c' parameter of 'ex_method' must be <class 'int'>, but a "
+            "value of 1.0 <class 'float'> was specified.",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError) as err:
+            inst.ex_method(1, 1.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method' must be <class 'int'>, "
+            "but a value of 5.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(5.0, err.exception.return_value)
+
+    def test_enforce_type_hints_on_method_self_not_named_self(self):
+        class ExClass:
+            def __init__(this, self: int):
+                this.self = self
+
+            @enforce_type_hints
+            def ex_method(this, self: int) -> int:
+                return this.self + self
+
+        inst = ExClass(1)
+        self.assertEqual(inst.ex_method(6), 7)
+
+        inst = ExClass(self=1)
+        self.assertEqual(inst.ex_method(self=6), 7)
+
+    def test_enforce_type_hints_on_class_method(self):
+        class ExClass:
+            def __init__(self, a: int, b: int):
+                self.a = a
+                self.b = b
+
+            @enforce_type_hints
+            @classmethod
+            def ex_method(cls, a: int, c: int) -> int:
+                return a + c
+
+        result = ExClass(2, 4)
+        print(result)
+        self.assertEqual(result, 6)
+
+    #def test_enforce_type_hints_on_
 
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
-#TODO: test self not named self
+#TODO: test strict self not named self
 #TODO: test all the kinds of methods here https://stackoverflow.com/questions/19314405/how-to-detect-is-decorator-has-been-applied-to-method-or-function
 #TODO: update documentation if defaults aren't checked on decoration
+#TODO: test args, kwargs

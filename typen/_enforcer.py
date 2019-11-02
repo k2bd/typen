@@ -1,4 +1,6 @@
 import inspect
+import random
+from string import ascii_lowercase
 
 import numpy as np
 
@@ -20,20 +22,30 @@ class Enforcer:
             ignore_self=False):
         self.func = func
         spec = func.__annotations__
-        params = inspect.signature(func).parameters
+        params = dict(inspect.signature(func).parameters)
 
         # If this is a method of some kind, ignore the first argument
         # (usually "self")
-        self.self_name = None
+        self.ignored_self_name = None
         if ignore_self:
-            self.self_name = list(params.keys())[0]
+            self.ignored_self_name = list(params.keys())[0]
 
-        if self.self_name is not None:
-            params = {k: v for k, v in params.items() if k != self.self_name}
+        if self.ignored_self_name is not None:
+            params.pop(self.ignored_self_name)
             # Ignore any annotations on self
             #TODO:test
-            if self.self_name in spec:
-                spec.pop(self.self_name)
+            if self.ignored_self_name in spec:
+                spec.pop(self.ignored_self_name)
+
+        # Handle the edge case that we have an actual arg named "self"
+        # This is done by replacing the "self" attribute for validation with a
+        # random name.
+        self._self = None
+        if "self" in params:
+            self._self = "".join(
+                random.choice(ascii_lowercase) for _ in range(15))
+            params[self._self] = params.pop("self")
+            spec[self._self] = spec.pop("self")
 
         unspecified = {key: Any for key in params.keys() if key not in spec}
         if unspecified and require_args:
@@ -61,13 +73,13 @@ class Enforcer:
 
     def verify_args(self, passed_args, passed_kwargs):
 
-        if self.self_name is not None:
+        if self.ignored_self_name is not None:
             # handle the rare case that self is passed as a kwarg
             #TODO:test
-            if self.self_name in passed_kwargs:
+            if self.ignored_self_name in passed_kwargs:
                 passed_kwargs = {
                     k: v for k, v in passed_kwargs.items()
-                    if k != self.self_name
+                    if k != self.ignored_self_name
                 }
             else:
                 passed_args = passed_args[1:]
@@ -89,6 +101,10 @@ class Enforcer:
         for key, value in self.default_kwargs.items():
             if key not in traits:
                 traits[key] = value
+
+        # Handle the corner case that "self" is a normal arg
+        if "self" in traits:
+            traits[self._self] = traits.pop("self")
 
         # Extra validation for numpy array dtypes
         for arg in self.args:

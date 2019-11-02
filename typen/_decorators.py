@@ -58,6 +58,18 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
 
         def __set_name__(self, owner, name):
             # This is called on class creation so we can distinguish methods
+            # from non-methods
+
+            # Get the actual function if this is a static or class method
+            desc = next(
+                (
+                    desc for desc in (staticmethod, classmethod)
+                    if isinstance(self.func, desc)
+                ), None
+            )
+            if desc:
+                self.func = self.func.__func__
+
             self.decorate(ignore_self=True)
 
             setattr(owner, name, self.decorated_func)
