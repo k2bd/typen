@@ -1,6 +1,6 @@
 import unittest
 
-from traits.api import Int, List, Str
+from traits.api import Float, Int, List, Str
 
 from typen._decorators import (
     enforce_type_hints,
@@ -99,18 +99,72 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
 
     def test_enforce_type_hints_packed_args_vanilla(self):
-        def example_function(a: Int, *args, b: Int = 5, **kwargs):
-            pass
+        def example_function(a, *args, b=5, c=6):
+            return sum([a, *args, b, c])
         new_func = enforce_type_hints(example_function)
 
-        new_func(1, "a", "b", b=3, c=2, d=7)
+        result = new_func(1, 2, 3, b=3, c=2)
+        self.assertEqual(result, 11)
 
     def test_enforce_type_hints_packed_args_hint(self):
-        def example_function(a: Int, *args: Str, **kwargs: (Str, Int)):
-            pass
+        def example_function(a: int, b: float, *args: str):
+            return str(a) + str(b) + "".join(str(arg) for arg in args)
         new_func = enforce_type_hints(example_function)
 
-        new_func(1, "a", "b")
+        result = new_func(1, 0.5, "a", "b", "c")
+        self.assertEqual(result, "10.5abc")
+
+        result = new_func(2, 3.0)
+        self.assertEqual(result, "23.0")
+
+        with self.assertRaises(ParameterTypeError) as err:
+            new_func(1, 0.5, "a", "b", "c", 6)
+
+        self.assertEqual(
+            "The 'args' parameters of 'example_function' must be "
+            "<class 'str'>, but a value of 6 <class 'int'> was specified.",
+            str(err.exception)
+        )
+
+    def test_enforce_type_hints_packed_kwargs_vanilla(self):
+        def example_function(a, b, **kwargs):
+            return (a, b, *kwargs.keys(), *kwargs.values())
+        new_func = enforce_type_hints(example_function)
+
+        result = new_func(1, 2, y=2, z="v", x=4.5)
+        self.assertEqual(
+            (1, 2, "y", "z", "x", 2, "v", 4.5),
+            result
+        )
+
+    def test_enforce_type_hints_packed_kwargs_hint(self):
+        def example_function(a: float, b: float, **kwargs: str):
+            return (a, b, *kwargs.keys(), *kwargs.values())
+        new_func = enforce_type_hints(example_function)
+
+        result = new_func(0.5, 1.0, y="a", word="bird", g="c")
+        self.assertEqual(
+            (0.5, 1.0, "y", "word", "g", "a", "bird", "c"),
+            result
+        )
+
+        result = new_func(0.5, 2.0)
+        self.assertEqual((0.5, 2.0), result)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            new_func(0.5, 1.0, g="r", word=10)
+
+        self.assertEqual(
+            "The 'kwargs' keywords of 'example_function' must have values of "
+            "type <class 'str'>, but 'word':10 <class 'int'> was specified.",
+            str(err.exception)
+        )
+
+    def test_enforce_type_hints_packed_args_kwargs_vanilla(self):
+        pass
+
+    def test_enforce_type_hints_packed_args_kwargs_hint(self):
+        pass
 
     def test_enforce_type_hints_on_init_method(self):
         class ExClass:

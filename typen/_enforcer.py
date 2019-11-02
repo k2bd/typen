@@ -49,12 +49,6 @@ class Enforcer:
                 self.packed_kwargs_name = name
                 if name in spec:
                     self.packed_kwargs_spec = spec.pop(name)
-                    if not isinstance(self.packed_kwargs_spec, tuple):
-                        msg = (
-                            "Packed keyword argument hint must be a tuple of "
-                            "(key type, value type)"
-                        )
-                        raise TypenError(msg)#TODO:TEST
                 elif require_args:
                     msg = (
                         "Packed keyword argument {} must be given a type hint"
@@ -130,12 +124,12 @@ class Enforcer:
         packed_args = []
         packed_kwargs = {}
         if self.packed_args_name is not None:
-            packed_args = passed_args[self.packed_args_pos:-1]
+            packed_args = passed_args[self.packed_args_pos:]
             passed_args = passed_args[:self.packed_args_pos]
         if self.packed_kwargs_name is not None:
             packed_kwargs = {
                 key: passed_kwargs[key] for key in
-                list(passed_kwargs.keys())[self.num_normal_keywords-1:-1]
+                list(passed_kwargs.keys())[self.num_normal_keywords-1:]
             }
             passed_kwargs = {
                 key: passed_kwargs[key] for key in
@@ -200,18 +194,47 @@ class Enforcer:
             name = self.packed_args_name
             spec = self.packed_args_spec
             fs.add_trait(name, spec)
-            for arg in packed_args:
-                to_set = {name: arg}
-                fs.trait_set(**to_set)
+            for value in packed_args:
+                to_set = {name: value}
+                try:
+                    fs.trait_set(**to_set)
+                except TraitError:
+                    msg = (
+                        "The {!r} parameters of {!r} must be {!r}, "
+                        "but a value of {!r} {!r} was specified."
+                    )
+                    raise ParameterTypeError(
+                        msg.format(
+                            self.packed_args_name,
+                            self.func.__name__,
+                            spec,
+                            value,
+                            type(value)
+                        )
+                    ) from None
         if self.packed_kwargs_spec is not None:
-            key_name = random_attribute_name()
-            value_name = random_attribute_name()
-            key_spec = self.packed_kwargs_spec[0]
-            value_spec = self.packed_kwargs_spec[1]
-            fs.add_trait(key_name, key_spec)
-            fs.add_trait(value_name, value_spec)
+            name = self.packed_kwargs_name
+            spec = self.packed_kwargs_spec
+            fs.add_trait(name, spec)
             for key, value in packed_kwargs.items():
-                to_set = {key_name: key, value_name: value}
+                to_set = {name: value}
+                try:
+                    fs.trait_set(**to_set)
+                except TraitError:
+                    msg = (
+                        "The {!r} keywords of {!r} must have values of type "
+                        "{!r}, but {!r}:{!r} {!r} was specified."
+                    )
+                    raise ParameterTypeError(
+                        msg.format(
+                            self.packed_kwargs_name,
+                            self.func.__name__,
+                            spec,
+                            key,
+                            value,
+                            type(value),
+                        )
+                    ) from None
 
     def verify_result(self, value):
         class ReturnType(HasTraits):

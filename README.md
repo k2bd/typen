@@ -44,6 +44,8 @@ def complicated_function(
     ...
 ```
 
+## Packed args and kwargs
+
 ## Method Decoration
 
 ## Strict Enforcement
