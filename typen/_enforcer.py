@@ -90,22 +90,22 @@ class Enforcer:
 
         fs = FunctionSignature()
 
-        for arg in self.args:
-            fs.add_trait(arg.name, arg.type)
-
         traits = {}
         for i, arg in enumerate(passed_args):
             expt_arg = self.args[i]
             traits[expt_arg.name] = arg
         traits.update(**passed_kwargs)
 
-        for key, value in self.default_kwargs.items():
-            if key not in traits:
-                traits[key] = value
-
         # Handle the corner case that "self" is the name of a normal parameter
         if "self" in traits:
             traits[self._self] = traits.pop("self")
+
+        for arg in self.args:
+            fs.add_trait(arg.name, arg.type)
+
+        for key, value in self.default_kwargs.items():
+            if key not in traits:
+                traits[key] = value
 
         # Extra validation for numpy array dtypes
         for arg in self.args:

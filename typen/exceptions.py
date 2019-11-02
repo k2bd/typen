@@ -12,3 +12,10 @@ class ParameterTypeError(Exception):
 
 class ReturnTypeError(Exception):
     pass
+
+
+class TypenError(Exception):
+    """
+    General Typen error.
+    """
+    pass

@@ -312,11 +312,6 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
         self.assertEqual(18.0, err.exception.return_value)
 
-
-
-
-
-
     def test_enforce_type_hints_on_static_method_params(self):
         class ExClass:
             @enforce_type_hints
@@ -442,7 +437,71 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
         self.assertEqual(18.0, err.exception.return_value)
 
-    #def test_enforce_type_hints_on_static_method_params
+    def test_enforce_type_hints_incorrect_self_annotations(self):
+        # The results of this are inconsistent. See k2bd/typen#3
+        class ExClass:
+            @enforce_type_hints
+            def __init__(cls: int):
+                pass
+
+            @enforce_type_hints
+            def method1(cls: int):
+                pass
+
+            @classmethod
+            @enforce_type_hints
+            def method2(cls: int):
+                pass
+
+            @enforce_type_hints
+            @classmethod
+            def method3(cls: int):
+                pass
+
+            @enforce_type_hints
+            def method4(self: int):
+                pass
+
+            @classmethod
+            @enforce_type_hints
+            def method5(self: int):
+                pass
+
+            @enforce_type_hints
+            @classmethod
+            def method6(self: int):
+                pass
+
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.method2()
+        self.assertIn("must be <class 'int'>", str(err.exception))
+
+        ExClass.method3()
+
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.method5()
+        self.assertIn("must be <class 'int'>", str(err.exception))
+
+        ExClass.method6()
+
+        inst = ExClass()
+        inst.method1()
+
+        self.assertIn("must be <class 'int'>", str(err.exception))
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.method2()
+        self.assertIn("must be <class 'int'>", str(err.exception))
+
+        inst.method3()
+
+        inst.method4()
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.method5()
+        self.assertIn("must be <class 'int'>", str(err.exception))
+
+        inst.method6()
+
 
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
