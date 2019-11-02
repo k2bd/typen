@@ -14,9 +14,34 @@ def strict_type_hints(func):
     """
     Enforce type hints on the parameters and return types decorated function.
 
-    Also require type hints to be provided for all args and the return value.
+    Also require type hints to be provided for all parmeters and the return
+    value.
     """
     return configure_enforce_type_hints(require_args=True, require_return=True)(func)
+
+
+def strict_parameter_hints(func):
+    """
+    Enforce type hints on the parameters and return types decorated function.
+
+    Also require type hints to be provided for all parameters.
+
+    Note: This decorator does NOT stack with ``strict_return_hints``. Please
+    use ``strict_type_hints`` to enforce both parameter and return value hints.
+    """
+    return configure_enforce_type_hints(require_args=True, require_return=False)(func)
+
+
+def strict_return_hint(func):
+    """
+    Enforce type hints on the parameters and return types decorated function.
+
+    Also require a type hint to be provided for the return type.
+
+    Note: This decorator does NOT stack with ``strict_parameter_hints``. Please
+    use ``strict_type_hints`` to enforce both parameter and return value hints.
+    """
+    return configure_enforce_type_hints(require_args=False, require_return=True)(func)
 
 
 def configure_enforce_type_hints(require_args=False, require_return=False):

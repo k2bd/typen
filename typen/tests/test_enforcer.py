@@ -129,7 +129,6 @@ class TestEnforcer(unittest.TestCase):
 
         enforcer.verify_result(10)
 
-
     def test_validate_result_with_type_hint(self):
         def example_function(a, b, c, d) -> str:
             pass
@@ -148,9 +147,112 @@ class TestEnforcer(unittest.TestCase):
         # Invalid return value is added to the exception
         self.assertEqual(err.exception.return_value, 6)
 
+    def test_widening_coercion(self):
+        def example_function(a: float, b: float) -> float:
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([1, 1], {})  # No errors
+        enforcer.verify_result(1)  # No errors
+
+    def test_narrowing_coercion(self):
+        def example_function(a: int, b: int) -> int:
+            pass
+        enforcer = Enforcer(example_function)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            enforcer.verify_args([1.0, 2.0], {})
+
+        self.assertEqual(
+            "The 'a' parameter of 'example_function' must be <class 'int'>, "
+            "but a value of 1.0 <class 'float'> was specified.",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError) as err:
+            enforcer.verify_result(1.0)
+
+        self.assertEqual(
+            "The return type of 'example_function' must be <class 'int'>, "
+            "but a value of 1.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+
+    def test_validate_with_none(self):
+        def example_function(a: None) -> None:
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([None], {})
+        enforcer.verify_result(None)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            enforcer.verify_args([0], {})
+
+        self.assertEqual(
+            "The 'a' parameter of 'example_function' must be None, "
+            "but a value of 0 <class 'int'> was specified.",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError) as err:
+            enforcer.verify_result(0)
+
+        self.assertEqual(
+            "The return type of 'example_function' must be None, "
+            "but a value of 0 <class 'int'> was returned.",
+            str(err.exception)
+        )
+
+    def test_validate_with_lists(self):
+        def example_function(a: list) -> list:
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([[1, 2, "a"]], {})
+        enforcer.verify_result([])
+
+        with self.assertRaises(ParameterTypeError) as err:
+            enforcer.verify_args([(1, 2, "a")], {})
+
+        self.assertEqual(
+            "The 'a' parameter of 'example_function' must be <class 'list'>, "
+            "but a value of (1, 2, 'a') <class 'tuple'> was specified.",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError) as err:
+            enforcer.verify_result(tuple())
+
+        self.assertEqual(
+            "The return type of 'example_function' must be <class 'list'>, "
+            "but a value of () <class 'tuple'> was returned.",
+            str(err.exception)
+        )
+
 
 class TestStrictEnforcer(unittest.TestCase):
-    pass
+    def test_instantiate_with_missing_parameter_hints(self):
+        def example_function(a, b: int, c):
+            pass
+        with self.assertRaises(UnspecifiedParameterTypeError) as err:
+            Enforcer(example_function, require_args=True, require_return=False)
+
+        self.assertEqual(
+            "The following parameters must be given type hints: ['a', 'c']",
+            str(err.exception)
+        )
+
+    def test_instantiate_with_missing_return_hint(self):
+        def example_function(a, b: int, c):
+            pass
+        with self.assertRaises(UnspecifiedReturnTypeError) as err:
+            Enforcer(example_function, require_args=False, require_return=True)
+
+        self.assertEqual(
+            "A return type hint must be specified.",
+            str(err.exception)
+        )
 
 
 class TestEnforcerTraits(unittest.TestCase):
