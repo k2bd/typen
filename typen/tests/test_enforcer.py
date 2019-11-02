@@ -375,17 +375,16 @@ class TestEnforcerTraits(unittest.TestCase):
                 b: Array(dtype="float64", shape=(2, None)),
                 c: Array(shape=(2, 2)),
                 d: Array(dtype="float64"),
-                ) -> Array(dtype="int32"):
+                ) -> Array(dtype="int64"):
             pass
         enforcer = Enforcer(example_function)
 
-        array_f22 = np.array([[1, 2], [3, 4]], dtype="float64")
-        array_f32 = np.array([[1, 2], [3, 4], [5, 6]], dtype="float64")
-        array_f23 = np.array([[1, 2, 3], [4, 5, 6]], dtype="float64")
+        array_f22 = np.array([[1.1, 2.2], [3, 4]], dtype="float64")
+        array_f32 = np.array([[1.1, 2.2], [3, 4], [5, 6]], dtype="float64")
+        array_f23 = np.array([[1.1, 2.2, 3], [4, 5, 6]], dtype="float64")
         array_i22 = np.array([[1, 2], [3, 4]], dtype="int32")
 
         enforcer.verify_args([array_f22, array_f22, array_f22, array_f22], {})
-        # N.B. coercion rules apply
         enforcer.verify_args([array_i22, array_f23, array_i22, array_f32], {})
         enforcer.verify_result(array_i22)
 
@@ -402,7 +401,11 @@ class TestEnforcerTraits(unittest.TestCase):
             enforcer.verify_result(array_f22)
 
     def test_validate_tuple(self):
-        pass
+        def example_function(a: Tuple(Str, Int)) -> Tuple(Str, Int):
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([("a", 2)], {})#TODO: write this test
 
     def test_validate_nested_trait_types(self):
         pass

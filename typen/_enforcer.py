@@ -1,6 +1,8 @@
 import inspect
 
-from traits.api import Any, HasTraits, TraitError
+import numpy as np
+
+from traits.api import Any, Array, HasTraits, TraitError
 
 from typen.exceptions import (
     ParameterTypeError,
@@ -56,6 +58,29 @@ class Enforcer:
             traits[expt_arg.name] = arg
         traits.update(**passed_kwargs)
 
+        # Extra validation for numpy array dtypes
+        for arg in self.args:
+            arg_name = arg.name
+            arg_type = arg.type
+            if arg_name not in traits:
+                continue
+            trait = traits[arg_name]
+            if isinstance(arg_type, Array) and isinstance(trait, np.ndarray):
+                try:
+                    traits[arg_name].astype(arg_type.dtype, casting="safe")
+                except TypeError:
+                    msg = (
+                        "The {!r} parameter of {!r} cannot be cast to an array"
+                        " of dtype {!r}"
+                    )
+                    raise ParameterTypeError(
+                        msg.format(
+                            arg_name,
+                            self.func.__name__,
+                            arg_type.dtype
+                        )
+                    )
+
         try:
             fs.trait_set(**traits)
         except TraitError as err:
@@ -76,6 +101,21 @@ class Enforcer:
 
         rt = ReturnType()
         rt.add_trait("result", self.returns)
+
+        # Extra validation for numpy array dtypes
+        if isinstance(self.returns, Array) and isinstance(value, np.ndarray):
+            try:
+                value.astype(self.returns.dtype, casting="safe")
+            except TypeError:
+                msg = (
+                    "The return value of {!r} cannot be cast to an array"
+                    " of dtype {!r}"
+                )
+                exception = ReturnTypeError(
+                    msg.format(self.func.__name__, self.returns.dtype)
+                )
+                exception.return_value = value
+                raise exception
 
         try:
             rt.trait_set(result=value)
