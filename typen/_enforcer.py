@@ -45,7 +45,8 @@ class Enforcer:
             self._self = "".join(
                 random.choice(ascii_lowercase) for _ in range(15))
             params[self._self] = params.pop("self")
-            spec[self._self] = spec.pop("self")
+            if "self" in spec:
+                spec[self._self] = spec.pop("self")
 
         unspecified = {key: Any for key in params.keys() if key not in spec}
         if unspecified and require_args:
@@ -102,7 +103,7 @@ class Enforcer:
             if key not in traits:
                 traits[key] = value
 
-        # Handle the corner case that "self" is a normal arg
+        # Handle the corner case that "self" is the name of a normal parameter
         if "self" in traits:
             traits[self._self] = traits.pop("self")
 

@@ -61,12 +61,11 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
             # from non-methods
 
             # Get the actual function if this is a static or class method
-            desc = next(
-                (
-                    desc for desc in (staticmethod, classmethod)
-                    if isinstance(self.func, desc)
-                ), None
-            )
+            desc = None
+            for d in [staticmethod, classmethod]:
+                if isinstance(self.func, d):
+                    desc = d
+
             if desc:
                 self.func = self.func.__func__
 

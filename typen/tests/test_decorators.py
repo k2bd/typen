@@ -116,6 +116,7 @@ class TestEnforceTypeHints(unittest.TestCase):
 
     def test_enforce_type_hints_on_method(self):
         class ExClass:
+            @enforce_type_hints
             def __init__(self, a: int, b: int):
                 self.a = a
                 self.b = b
@@ -148,9 +149,10 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
         self.assertEqual(5.0, err.exception.return_value)
 
-    def test_enforce_type_hints_on_method_self_not_named_self(self):
+    def test_enforce_type_hints_on_method_self_not_named_self_params(self):
         class ExClass:
-            def __init__(this, self: int):
+            @enforce_type_hints
+            def __init__(this, self):
                 this.self = self
 
             @enforce_type_hints
@@ -163,8 +165,31 @@ class TestEnforceTypeHints(unittest.TestCase):
         inst = ExClass(self=1)
         self.assertEqual(inst.ex_method(self=6), 7)
 
+    def test_enforce_type_hints_on_method_self_not_named_self_return(self):
+        class ExClass:
+            @enforce_type_hints
+            def __init__(this, self: int):
+                this.self = self
+
+            @enforce_type_hints
+            def ex_method(this, self) -> int:
+                return this.self*self
+
+        inst = ExClass(2)
+        self.assertEqual(inst.ex_method(5), 10)
+
+        with self.assertRaises(ReturnTypeError) as err:
+            inst.ex_method(5.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method' must be <class 'int'>, "
+            "but a value of 10.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+
     def test_enforce_type_hints_on_class_method(self):
         class ExClass:
+            @enforce_type_hints
             def __init__(self, a: int, b: int):
                 self.a = a
                 self.b = b
@@ -181,6 +206,14 @@ class TestEnforceTypeHints(unittest.TestCase):
 
         result = ExClass.ex_method1(2, 4)
         self.assertEqual(result, 6)
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.ex_method1("a", 4)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method1' must be <class 'int'>, "
+            "but a value of 'a' <class 'str'> was specified.",
+            str(err.exception)
+        )
 
         result = ExClass.ex_method2(5, 4)
         self.assertEqual(result, 9)
