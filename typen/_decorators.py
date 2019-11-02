@@ -45,29 +45,38 @@ def strict_return_hint(func):
 
 
 def configure_enforce_type_hints(require_args=False, require_return=False):
-    def inner(func):
-        #desc = next(
-        #    (
-        #        desc for desc in (staticmethod, classmethod)
-        #        if isinstance(func, desc)
-        #    ), None
-        #)
-        #if desc:
-        #    func = func.__func__
+    class EnforceTypeHints:
+        def __init__(self, func):
+            self.func = func
+            self.enforcer = None
 
-        enforcer = Enforcer(
-            func,
-            require_args=require_args,
-            require_return=require_return,
-        )
+        def __call__(self, *args, **kwargs):
+            if self.enforcer is None:
+                self.decorate()
 
-        @wraps(func)
-        def new_func(*args, **kwargs):
-            enforcer.verify_args(args, kwargs)
-            result = func(*args, **kwargs)
-            enforcer.verify_result(result)
-            return result
+            return self.decorated_func(*args, **kwargs)
 
-        return new_func
+        def __set_name__(self, owner, name):
+            # This is called on class creation so we can distinguish methods
+            self.decorate(ignore_self=True)
 
-    return inner
+            setattr(owner, name, self.decorated_func)
+
+        def decorate(self, ignore_self=False):
+            self.enforcer = Enforcer(
+                self.func,
+                require_args=require_args,
+                require_return=require_return,
+                ignore_self=ignore_self,
+            )
+
+            @wraps(self.func)
+            def new_func(*args, **kwargs):
+                self.enforcer.verify_args(args, kwargs)
+                result = self.func(*args, **kwargs)
+                self.enforcer.verify_result(result)
+                return result
+
+            self.decorated_func = new_func
+
+    return EnforceTypeHints

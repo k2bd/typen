@@ -13,12 +13,29 @@ from typen.exceptions import (
 
 
 class Enforcer:
-    def __init__(self, func, require_args=False, require_return=False):
+    def __init__(
+            self, func,
+            require_args=False,
+            require_return=False,
+            ignore_self=False):
         self.func = func
         spec = func.__annotations__
         params = inspect.signature(func).parameters
-        unspecified = {key: Any for key in params.keys() if key not in spec}
 
+        # If this is a method of some kind, ignore the first argument
+        # (usually "self")
+        self.self_name = None
+        if ignore_self:
+            self.self_name = list(params.keys())[0]
+
+        if self.self_name is not None:
+            params = {k: v for k, v in params.items() if k != self.self_name}
+            # Ignore any annotations on self
+            #TODO:test
+            if self.self_name in spec:
+                spec.pop(self.self_name)
+
+        unspecified = {key: Any for key in params.keys() if key not in spec}
         if unspecified and require_args:
             msg = "The following parameters must be given type hints: {!r}"
             raise UnspecifiedParameterTypeError(msg.format(list(unspecified.keys())))
@@ -43,6 +60,18 @@ class Enforcer:
         }
 
     def verify_args(self, passed_args, passed_kwargs):
+
+        if self.self_name is not None:
+            # handle the rare case that self is passed as a kwarg
+            #TODO:test
+            if self.self_name in passed_kwargs:
+                passed_kwargs = {
+                    k: v for k, v in passed_kwargs.items()
+                    if k != self.self_name
+                }
+            else:
+                passed_args = passed_args[1:]
+
         class FunctionSignature(HasTraits):
             pass
 

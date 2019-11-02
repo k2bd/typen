@@ -96,19 +96,19 @@ class TestEnforceTypeHints(unittest.TestCase):
             str(err.exception)
         )
 
-    #def test_enforce_type_hints_on_method(self):
-    #    class ExClass:
-    #        def __init__(self, a: int, b: int):
-    #            self.a = a
-    #            self.b = b
-#
-    #        @enforce_type_hints
-    #        def ex_method(self, c: int) -> int:
-    #            return self.a + self.b + c
-#
-    #    inst = ExClass(1, 2)
-    #    inst.ex_method(6)
-#
+    def test_enforce_type_hints_on_method(self):
+        class ExClass:
+            def __init__(self, a: int, b: int):
+                self.a = a
+                self.b = b
+
+            @enforce_type_hints
+            def ex_method(self, c: int) -> int:
+                return self.a + self.b + c
+
+        inst = ExClass(1, 2)
+        inst.ex_method(6)
+
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
 #TODO: test self not named self
