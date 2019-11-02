@@ -40,7 +40,7 @@ class Enforcer:
                     self.packed_args_spec = spec.pop(name)
                 elif require_args:
                     msg = (
-                        "Packed positional argument {} must be given a type "
+                        "Packed positional argument {!r} must be given a type "
                         "hint"
                     )
                     raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
@@ -51,7 +51,8 @@ class Enforcer:
                     self.packed_kwargs_spec = spec.pop(name)
                 elif require_args:
                     msg = (
-                        "Packed keyword argument {} must be given a type hint"
+                        "Packed keyword argument {!r} must be given a type "
+                        "hint"
                     )
                     raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
                 params.pop(name)
