@@ -87,9 +87,9 @@ def add_numbers(a: float, b: float) -> float:
 type(add_numbers(1, 2))  # int
 ```
 
-## Recovering from `ReturnTypeError`s
+## Recovering from `ReturnTypeError`
 
-Because the function has to be executed to enforce the return value, the invalid value is stored on the exception. This makes it possible to recover from `ReturnTypeError`s programatically.
+Because the function has to be executed to enforce the return value, the invalid value is stored on the exception. This makes it possible to recover from a `ReturnTypeError` programatically.
 
 ```python
 from typen.exceptions import ReturnTypeError
