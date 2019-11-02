@@ -9,6 +9,7 @@ from traits.api import Any, Array, HasTraits, TraitError
 from typen.exceptions import (
     ParameterTypeError,
     ReturnTypeError,
+    TypenError,
     UnspecifiedParameterTypeError,
     UnspecifiedReturnTypeError,
 )
@@ -23,6 +24,44 @@ class Enforcer:
         self.func = func
         spec = func.__annotations__
         params = dict(inspect.signature(func).parameters)
+
+        # Support for annotations on arg and kwarg packing
+        self.packed_args_name = None
+        self.packed_args_pos = None
+        self.packed_args_spec = None
+        self.packed_kwargs_name = None
+        self.num_normal_keywords = None
+        self.packed_kwargs_spec = None
+        for i, (name, param) in enumerate(list(params.items())):
+            if param.kind == inspect.Parameter.VAR_POSITIONAL:
+                self.packed_args_name = name
+                self.packed_args_pos = i
+                if name in spec:
+                    self.packed_args_spec = spec.pop(name)
+                elif require_args:
+                    msg = (
+                        "Packed positional argument {} must be given a type "
+                        "hint"
+                    )
+                    raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
+                params.pop(name)
+            elif param.kind == inspect.Parameter.VAR_KEYWORD:
+                self.packed_kwargs_name = name
+                if name in spec:
+                    self.packed_kwargs_spec = spec.pop(name)
+                    if not isinstance(self.packed_kwargs_spec, tuple):
+                        msg = (
+                            "Packed keyword argument hint must be a tuple of "
+                            "(key type, value type)"
+                        )
+                        raise TypenError(msg)#TODO:TEST
+                elif require_args:
+                    msg = (
+                        "Packed keyword argument {} must be given a type hint"
+                    )
+                    raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
+                params.pop(name)
+                self.num_normal_keywords = len(params)
 
         # If this is a method of some kind, ignore the first argument
         # (usually "self")
@@ -42,8 +81,7 @@ class Enforcer:
         # random name.
         self._self = None
         if "self" in params:
-            self._self = "".join(
-                random.choice(ascii_lowercase) for _ in range(15))
+            self._self = random_attribute_name()
             params[self._self] = params.pop("self")
             if "self" in spec:
                 spec[self._self] = spec.pop("self")
@@ -73,7 +111,6 @@ class Enforcer:
         }
 
     def verify_args(self, passed_args, passed_kwargs):
-
         if self.ignored_self_name is not None:
             # handle the rare case that self is passed as a kwarg
             #TODO:test
@@ -89,6 +126,21 @@ class Enforcer:
             pass
 
         fs = FunctionSignature()
+
+        packed_args = []
+        packed_kwargs = {}
+        if self.packed_args_name is not None:
+            packed_args = passed_args[self.packed_args_pos:-1]
+            passed_args = passed_args[:self.packed_args_pos]
+        if self.packed_kwargs_name is not None:
+            packed_kwargs = {
+                key: passed_kwargs[key] for key in
+                list(passed_kwargs.keys())[self.num_normal_keywords-1:-1]
+            }
+            passed_kwargs = {
+                key: passed_kwargs[key] for key in
+                list(passed_kwargs.keys())[:self.num_normal_keywords-1]
+            }
 
         traits = {}
         for i, arg in enumerate(passed_args):
@@ -144,6 +196,23 @@ class Enforcer:
                 msg.format(name, self.func.__name__, expt_type, value, type(value))
             ) from None
 
+        if self.packed_args_spec is not None:
+            name = self.packed_args_name
+            spec = self.packed_args_spec
+            fs.add_trait(name, spec)
+            for arg in packed_args:
+                to_set = {name: arg}
+                fs.trait_set(**to_set)
+        if self.packed_kwargs_spec is not None:
+            key_name = random_attribute_name()
+            value_name = random_attribute_name()
+            key_spec = self.packed_kwargs_spec[0]
+            value_spec = self.packed_kwargs_spec[1]
+            fs.add_trait(key_name, key_spec)
+            fs.add_trait(value_name, value_spec)
+            for key, value in packed_kwargs.items():
+                to_set = {key_name: key, value_name: value}
+
     def verify_result(self, value):
         class ReturnType(HasTraits):
             pass
@@ -183,3 +252,7 @@ class Arg:
     def __init__(self, name, type):
         self.name = name
         self.type = type
+
+
+def random_attribute_name():
+    return "".join(random.choice(ascii_lowercase) for _ in range(15))

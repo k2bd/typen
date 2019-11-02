@@ -1,5 +1,7 @@
 import unittest
 
+from traits.api import Int, List, Str
+
 from typen._decorators import (
     enforce_type_hints,
     strict_parameter_hints,
@@ -95,6 +97,20 @@ class TestEnforceTypeHints(unittest.TestCase):
             "but a value of 0.5 <class 'float'> was specified.",
             str(err.exception)
         )
+
+    def test_enforce_type_hints_packed_args_vanilla(self):
+        def example_function(a: Int, *args, b: Int = 5, **kwargs):
+            pass
+        new_func = enforce_type_hints(example_function)
+
+        new_func(1, "a", "b", b=3, c=2, d=7)
+
+    def test_enforce_type_hints_packed_args_hint(self):
+        def example_function(a: Int, *args: Str, **kwargs: (Str, Int)):
+            pass
+        new_func = enforce_type_hints(example_function)
+
+        new_func(1, "a", "b")
 
     def test_enforce_type_hints_on_init_method(self):
         class ExClass:
@@ -441,7 +457,7 @@ class TestEnforceTypeHints(unittest.TestCase):
         # The results of this are inconsistent. See k2bd/typen#3
         class ExClass:
             @enforce_type_hints
-            def __init__(cls: int):
+            def __init__(self: int):
                 pass
 
             @enforce_type_hints
@@ -507,5 +523,6 @@ class TestEnforceTypeHints(unittest.TestCase):
 #TODO: test passing self as kwarg
 #TODO: test strict self not named self
 #TODO: test all the kinds of methods here https://stackoverflow.com/questions/19314405/how-to-detect-is-decorator-has-been-applied-to-method-or-function
-#TODO: update documentation if defaults aren't checked on decoration
-#TODO: test args, kwargs
+#TODO: test args, kwargs (both with and without type hints)
+#TODO: test packed args, kwargs with self
+#TODO: test packed arg and kwarg numpy arrays

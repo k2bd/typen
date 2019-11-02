@@ -1,7 +1,17 @@
 import unittest
 
 import numpy as np
-from traits.api import Array, Either, Enum, Float, Instance, Int, Str, Tuple
+from traits.api import (
+    Array,
+    Either,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    Str,
+    Tuple,
+)
 
 from typen._enforcer import Enforcer
 from typen.exceptions import (
@@ -436,3 +446,10 @@ class TestEnforcerTraits(unittest.TestCase):
 
         with self.assertRaises(ReturnTypeError):
             enforcer.verify_result(("b", 2))
+
+    def test_validate_args_list(self):
+        def example_function(a: Int, *args: List(Str)):
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([1, ["a", "b", "c"]], {})
