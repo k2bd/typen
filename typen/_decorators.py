@@ -72,6 +72,8 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
 
             self.decorate(ignore_self=True)
 
+            if desc:
+                self.decorated_func = desc(self.decorated_func)
             setattr(owner, name, self.decorated_func)
 
         def decorate(self, ignore_self=False):

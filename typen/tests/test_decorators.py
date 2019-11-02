@@ -169,14 +169,21 @@ class TestEnforceTypeHints(unittest.TestCase):
                 self.a = a
                 self.b = b
 
-            @enforce_type_hints
             @classmethod
-            def ex_method(cls, a: int, c: int) -> int:
+            @enforce_type_hints
+            def ex_method1(cls, a: int, c: int) -> int:
                 return a + c
 
-        result = ExClass(2, 4)
-        print(result)
+            @enforce_type_hints
+            @classmethod
+            def ex_method2(cls, a: int, c: int) -> int:
+                return a + c
+
+        result = ExClass.ex_method1(2, 4)
         self.assertEqual(result, 6)
+
+        result = ExClass.ex_method2(5, 4)
+        self.assertEqual(result, 9)
 
     #def test_enforce_type_hints_on_
 
