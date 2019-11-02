@@ -45,7 +45,7 @@ def complicated_function(
 
 ## Default Values
 
-Valid default values are enforced as well. `ParameterTypeError`s for default values are raised at decoration time.
+Valid default values are enforced as well. `ParameterTypeError`s for default values are raised on decoration.
 
 ```python
 @enforce_type_hints
@@ -58,7 +58,7 @@ def add_numbers(
 
 ## Strict Enforcement
 
-Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception. Without strict enforcement, parameters and return values without type hints can have any value.
+Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception on decoration. Without strict enforcement, parameters and return values without type hints can have any value.
 
 ```python
 from typen import strict_type_hints
