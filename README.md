@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/k2bd/typen.svg?branch=master)](https://travis-ci.org/k2bd/typen)
 
-This package supplies simple decorators to enforce type hints on Python function parameters and return types.
+This package supplies simple decorators to enforce Python type hints on function parameters and return types.
 
 ```python
 from typen import enforce_type_hints
