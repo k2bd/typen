@@ -60,16 +60,21 @@ def configure_enforce_type_hints(require_args=False, require_return=False):
             # This is called on class creation so we can distinguish methods
             # from non-methods
 
+            ignore_self = True
+
             # Get the actual function if this is a static or class method
             desc = None
-            for d in [staticmethod, classmethod]:
-                if isinstance(self.func, d):
-                    desc = d
+            if isinstance(self.func, staticmethod):
+                # Static methods don't take a `self` parameter
+                desc = staticmethod
+                ignore_self = False
+            elif isinstance(self.func, classmethod):
+                desc = classmethod
 
             if desc:
                 self.func = self.func.__func__
 
-            self.decorate(ignore_self=True)
+            self.decorate(ignore_self=ignore_self)
 
             if desc:
                 self.decorated_func = desc(self.decorated_func)

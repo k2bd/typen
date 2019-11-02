@@ -14,7 +14,7 @@ from typen.exceptions import (
 )
 
 
-# Note: Most functionality tests are found in test_enforcer.py
+# Note: Type checking is found in test_enforcer.py
 class TestEnforceTypeHints(unittest.TestCase):
     def test_enforce_type_hints_vanilla(self):
         def example_function(a, b):
@@ -187,7 +187,7 @@ class TestEnforceTypeHints(unittest.TestCase):
             str(err.exception)
         )
 
-    def test_enforce_type_hints_on_class_method(self):
+    def test_enforce_type_hints_on_class_method_params(self):
         class ExClass:
             @enforce_type_hints
             def __init__(self, a: int, b: int):
@@ -218,7 +218,231 @@ class TestEnforceTypeHints(unittest.TestCase):
         result = ExClass.ex_method2(5, 4)
         self.assertEqual(result, 9)
 
-    #def test_enforce_type_hints_on_
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.ex_method2("b", 4)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method2' must be <class 'int'>, "
+            "but a value of 'b' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+        inst = ExClass(1, 2)
+        result = inst.ex_method1(5, 3)
+        self.assertEqual(result, 8)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.ex_method1("c", 5)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method1' must be <class 'int'>, "
+            "but a value of 'c' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+        result = inst.ex_method2(9, 3)
+        self.assertEqual(result, 12)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.ex_method2("d", 5)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method2' must be <class 'int'>, "
+            "but a value of 'd' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+    def test_enforce_type_hints_on_class_method_return(self):
+        class ExClass:
+            @classmethod
+            @enforce_type_hints
+            def ex_method1(cls, self) -> int:
+                return self * 2
+
+            @enforce_type_hints
+            @classmethod
+            def ex_method2(cls, self) -> int:
+                return self * 2
+
+        result = ExClass.ex_method1(4)
+        self.assertEqual(result, 8)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass.ex_method1(6.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method1' must be <class 'int'>, "
+            "but a value of 12.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(12.0, err.exception.return_value)
+
+        result = ExClass.ex_method2(5)
+        self.assertEqual(result, 10)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass.ex_method2(7.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method2' must be <class 'int'>, "
+            "but a value of 14.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(14.0, err.exception.return_value)
+
+        result = ExClass().ex_method1(6)
+        self.assertEqual(result, 12)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass().ex_method1(8.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method1' must be <class 'int'>, "
+            "but a value of 16.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(16.0, err.exception.return_value)
+
+        result = ExClass().ex_method2(7)
+        self.assertEqual(result, 14)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass().ex_method2(9.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method2' must be <class 'int'>, "
+            "but a value of 18.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(18.0, err.exception.return_value)
+
+
+
+
+
+
+    def test_enforce_type_hints_on_static_method_params(self):
+        class ExClass:
+            @enforce_type_hints
+            def __init__(self, a: int, b: int):
+                self.a = a
+                self.b = b
+
+            @staticmethod
+            @enforce_type_hints
+            def ex_method1(a: int, c: int) -> int:
+                return a + c
+
+            @enforce_type_hints
+            @staticmethod
+            def ex_method2(a: int, c: int) -> int:
+                return a + c
+
+        result = ExClass.ex_method1(2, 4)
+        self.assertEqual(result, 6)
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.ex_method1("a", 4)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method1' must be <class 'int'>, "
+            "but a value of 'a' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+        result = ExClass.ex_method2(5, 4)
+        self.assertEqual(result, 9)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            ExClass.ex_method2("b", 4)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method2' must be <class 'int'>, "
+            "but a value of 'b' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+        inst = ExClass(1, 2)
+        result = inst.ex_method1(5, 3)
+        self.assertEqual(result, 8)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.ex_method1("c", 5)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method1' must be <class 'int'>, "
+            "but a value of 'c' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+        result = inst.ex_method2(9, 3)
+        self.assertEqual(result, 12)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            inst.ex_method2("d", 5)
+
+        self.assertEqual(
+            "The 'a' parameter of 'ex_method2' must be <class 'int'>, "
+            "but a value of 'd' <class 'str'> was specified.",
+            str(err.exception)
+        )
+
+    def test_enforce_type_hints_on_static_method_return(self):
+        class ExClass:
+            @staticmethod
+            @enforce_type_hints
+            def ex_method1(self) -> int:
+                return self * 2
+
+            @enforce_type_hints
+            @staticmethod
+            def ex_method2(self) -> int:
+                return self * 2
+
+        result = ExClass.ex_method1(4)
+        self.assertEqual(result, 8)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass.ex_method1(6.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method1' must be <class 'int'>, "
+            "but a value of 12.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(12.0, err.exception.return_value)
+
+        result = ExClass.ex_method2(5)
+        self.assertEqual(result, 10)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass.ex_method2(7.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method2' must be <class 'int'>, "
+            "but a value of 14.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(14.0, err.exception.return_value)
+
+        result = ExClass().ex_method1(6)
+        self.assertEqual(result, 12)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass().ex_method1(8.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method1' must be <class 'int'>, "
+            "but a value of 16.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(16.0, err.exception.return_value)
+
+        result = ExClass().ex_method2(7)
+        self.assertEqual(result, 14)
+        with self.assertRaises(ReturnTypeError) as err:
+            ExClass().ex_method2(9.0)
+
+        self.assertEqual(
+            "The return type of 'ex_method2' must be <class 'int'>, "
+            "but a value of 18.0 <class 'float'> was returned.",
+            str(err.exception)
+        )
+        self.assertEqual(18.0, err.exception.return_value)
+
+    #def test_enforce_type_hints_on_static_method_params
 
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
