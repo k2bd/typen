@@ -1,5 +1,8 @@
 import unittest
 
+import numpy as np
+from traits.api import Array, Either, Enum, Float, Instance, Int, Str, Tuple
+
 from typen._enforcer import Enforcer
 from typen.exceptions import (
     ParameterTypeError,
@@ -13,19 +16,16 @@ class TestEnforcer(unittest.TestCase):
     def test_instantiate_vanilla_function(self):
         def example_function(a):
             pass
-
         Enforcer(example_function)  # No errors
 
     def test_instantiate_with_type_hints(self):
         def example_function(a: int, b, c: str, d) -> float:
             return 1.0
-
         Enforcer(example_function)  # No errors
 
     def test_instantiate_with_defaults(self):
         def example_function(a: int, b, c: str = "a", d=6) -> float:
             return 1.0
-
         Enforcer(example_function)  # No errors
 
     def test_instantiate_with_invalid_defaults(self):
@@ -44,13 +44,11 @@ class TestEnforcer(unittest.TestCase):
     def test_instantiate_return_type_validity_not_checked(self):
         def example_function(a: int, b, c: int = 1, d=6) -> float:
             return "asd"
-
         Enforcer(example_function)  # No errors
 
     def test_validate_args_vanilla_function(self):
         def example_function(a, b, c="a", d=6):
             return 1.0
-
         enforcer = Enforcer(example_function)
 
         enforcer.verify_args([1, 2, 3, "a"], {})
@@ -58,7 +56,6 @@ class TestEnforcer(unittest.TestCase):
     def test_validate_args_with_type_hints(self):
         def example_function(a: int, b, c: str = "aa", d=5):
             pass
-
         enforcer = Enforcer(example_function)
 
         enforcer.verify_args([1, 2, "string", "string2"], {})
@@ -256,4 +253,156 @@ class TestStrictEnforcer(unittest.TestCase):
 
 
 class TestEnforcerTraits(unittest.TestCase):
-    pass
+    def test_validate_trait_types(self):
+        def example_function(a: Str, b: Int) -> Float:
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args(["aa", 0], {})
+        enforcer.verify_args([], {"b": 0, "a": "string"})
+        enforcer.verify_result(0.1)
+        enforcer.verify_result(1)
+
+    def test_validate_args_invalid_args(self):
+        def example_function(a: Str, b: Int) -> Float:
+            pass
+        enforcer = Enforcer(example_function)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            enforcer.verify_args([90, 10], {})
+
+        self.assertEqual(
+            "The 'a' parameter of 'example_function' must be "
+            "<class 'traits.trait_types.Str'>, but a value of 90 "
+            "<class 'int'> was specified.",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError) as err:
+            enforcer.verify_result("bad")
+
+        self.assertEqual(
+            "The return type of 'example_function' must be "
+            "<class 'traits.trait_types.Float'>, but a value of 'bad' "
+            "<class 'str'> was returned.",
+            str(err.exception)
+        )
+
+    def test_instantiate_with_invalid_defaults(self):
+        def example_function(a: Str = "a", b: Int = "b"):
+            pass
+
+        with self.assertRaises(ParameterTypeError) as err:
+            Enforcer(example_function)
+
+        self.assertEqual(
+            "The 'b' parameter of 'example_function' must be "
+            "<class 'traits.trait_types.Int'>, but a value of 'b' "
+            "<class 'str'> was specified.",
+            str(err.exception)
+        )
+
+    def test_validate_either(self):
+        def example_function(a: Either(Str, Int)) -> Either(Int, Str):
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args(["a"], {})
+        enforcer.verify_args([1], {})
+        enforcer.verify_result(2)
+        enforcer.verify_result("b")
+
+        with self.assertRaises(ParameterTypeError):
+            enforcer.verify_args([1.0], {})
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result(1.0)
+
+    def test_validate_enum(self):
+        def example_function(
+                a: Enum(1, 5, "c", 4.0)
+                ) -> Enum(7, "d"):
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_args([1], {})
+        enforcer.verify_args([5], {})
+        enforcer.verify_args(["c"], {})
+        enforcer.verify_args([4.0], {})
+        enforcer.verify_result(7)
+        enforcer.verify_result("d")
+
+        with self.assertRaises(ParameterTypeError):
+            enforcer.verify_args([7], {})
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result("c")
+
+    def test_validate_instance(self):
+        class MyClass:
+            pass
+
+        class BabClass(MyClass):
+            pass
+
+        class UnrelatedClass:
+            pass
+
+        def example_function(a: Instance(MyClass)) -> Instance(BabClass):
+            pass
+        enforcer = Enforcer(example_function)
+
+        parent = MyClass()
+        child = BabClass()
+        other = UnrelatedClass()
+
+        enforcer.verify_args([parent], {})
+        enforcer.verify_args([child], {})
+        enforcer.verify_result(child)
+
+        with self.assertRaises(ParameterTypeError):
+            enforcer.verify_args([other], {})
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result(parent)
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result(other)
+
+    def test_validate_array(self):
+        def example_function(
+                a: Array(dtype="float64", shape=(2, 2)),
+                b: Array(dtype="float64", shape=(2, None)),
+                c: Array(shape=(2, 2)),
+                d: Array(dtype="float64"),
+                ) -> Array(dtype="int32"):
+            pass
+        enforcer = Enforcer(example_function)
+
+        array_f22 = np.array([[1, 2], [3, 4]], dtype="float64")
+        array_f32 = np.array([[1, 2], [3, 4], [5, 6]], dtype="float64")
+        array_f23 = np.array([[1, 2, 3], [4, 5, 6]], dtype="float64")
+        array_i22 = np.array([[1, 2], [3, 4]], dtype="int32")
+
+        enforcer.verify_args([array_f22, array_f22, array_f22, array_f22], {})
+        # N.B. coercion rules apply
+        enforcer.verify_args([array_i22, array_f23, array_i22, array_f32], {})
+        enforcer.verify_result(array_i22)
+
+        with self.assertRaises(ParameterTypeError) as err:
+            enforcer.verify_args(
+                [array_f22, array_f32, array_i22, array_f32], {})
+
+        self.assertIn(
+            "The 'b' parameter of 'example_function'",
+            str(err.exception)
+        )
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result(array_f22)
+
+    def test_validate_tuple(self):
+        pass
+
+    def test_validate_nested_trait_types(self):
+        pass

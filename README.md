@@ -31,7 +31,7 @@ give_int("a")  # ReturnTypeError
 [Trait](https://github.com/enthought/traits) types can also be used to define complex patterns in type hints
 
 ```python
-from traits.api import Either, Enum, Instance, Int, Str, Tuple
+from traits.api import Array, Either, Enum, Instance, Int, Str, Tuple
 
 
 @enforce_type_hints
@@ -39,6 +39,7 @@ def complicated_function(
         a: Either(Str, Int),  # Either a string or an int
         b: Enum(2, 5, "foo"),  # One of a specific set of values
         c: Instance(MyClass),  # Class instances
+        d: Array(dtype="float64", size=(None, 2)),  # Numpy array validation
         ) -> Tuple(Str, Either(Str, Int)):  # Complicated return specification
     ...
 ```

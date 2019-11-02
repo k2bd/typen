@@ -1,1 +1,14 @@
-traits>=5.1.2
+appdirs==1.4.3
+configparser==3.5.0
+distribute-remove==1.0.0
+entrypoints==0.3
+flake8==3.7.7
+mccabe==0.6.1
+MKL==2018.0.3
+numpy==1.15.4
+packaging==16.8
+pycodestyle==2.5.0
+pyflakes==2.1.1
+pyparsing==2.2.0
+six==1.11.0
+traits==5.1.2
