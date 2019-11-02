@@ -44,18 +44,7 @@ def complicated_function(
     ...
 ```
 
-## Default Values
-
-Valid default values are enforced as well. `ParameterTypeError`s for default values are raised on decoration.
-
-```python
-@enforce_type_hints
-def add_numbers(
-        a: float = 1,  # Can be coerced to float
-        b: float = "two"  # ParameterTypeError
-        ) -> float:
-    return a + b
-```
+## Method Decoration
 
 ## Strict Enforcement
 
@@ -105,3 +94,5 @@ try:
 except ReturnTypeError as err:
     print(err.return_value)  # a
 ```
+
+## Shortcomings
