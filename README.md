@@ -1,5 +1,7 @@
 # Strong Type Hints with Traits
 
+[![Build Status](https://travis-ci.org/k2bd/typen.svg?branch=master)](https://travis-ci.org/k2bd/typen)
+
 This package supplies simple decorators to enforce type hints on function parameters and return types.
 
 ```python
