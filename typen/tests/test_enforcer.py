@@ -28,12 +28,13 @@ class TestEnforcer(unittest.TestCase):
             return 1.0
         Enforcer(example_function)  # No errors
 
-    def test_instantiate_with_invalid_defaults(self):
+    def test_validate_args_with_invalid_defaults(self):
         def example_function(a: int, b, c: int = "a", d=6) -> float:
             return 1.0
+        enforcer = Enforcer(example_function)
 
         with self.assertRaises(ParameterTypeError) as err:
-            Enforcer(example_function)
+            enforcer.verify_args([], {})
 
         self.assertEqual(
             "The 'c' parameter of 'example_function' must be <class 'int'>, "
@@ -288,12 +289,14 @@ class TestEnforcerTraits(unittest.TestCase):
             str(err.exception)
         )
 
-    def test_instantiate_with_invalid_defaults(self):
+    def test_validete_with_invalid_defaults(self):
         def example_function(a: Str = "a", b: Int = "b"):
             pass
+        enforcer = Enforcer(example_function)
 
+        # Emulate passing no args, i.e. using defaults
         with self.assertRaises(ParameterTypeError) as err:
-            Enforcer(example_function)
+            enforcer.verify_args([], {})
 
         self.assertEqual(
             "The 'b' parameter of 'example_function' must be "
@@ -428,5 +431,8 @@ class TestEnforcerTraits(unittest.TestCase):
         enforcer.verify_args([("a", 2)], {})
         enforcer.verify_result((2, "b"))
 
-    def test_validate_nested_trait_types(self):
-        pass
+        with self.assertRaises(ParameterTypeError):
+            enforcer.verify_args([(2, "a")], {})
+
+        with self.assertRaises(ReturnTypeError):
+            enforcer.verify_result(("b", 2))

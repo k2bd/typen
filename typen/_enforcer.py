@@ -37,11 +37,10 @@ class Enforcer:
         self.args = [Arg(k, spec[k]) for k in params.keys()]
 
         # Validate defaults
-        default_kwargs = {
+        self.default_kwargs = {
             k: v.default for k, v in params.items()
             if v.default is not inspect.Parameter.empty
         }
-        self.verify_args([], default_kwargs)
 
     def verify_args(self, passed_args, passed_kwargs):
         class FunctionSignature(HasTraits):
@@ -57,6 +56,10 @@ class Enforcer:
             expt_arg = self.args[i]
             traits[expt_arg.name] = arg
         traits.update(**passed_kwargs)
+
+        for key, value in self.default_kwargs.items():
+            if key not in traits:
+                traits[key] = value
 
         # Extra validation for numpy array dtypes
         for arg in self.args:

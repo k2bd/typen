@@ -46,6 +46,15 @@ def strict_return_hint(func):
 
 def configure_enforce_type_hints(require_args=False, require_return=False):
     def inner(func):
+        #desc = next(
+        #    (
+        #        desc for desc in (staticmethod, classmethod)
+        #        if isinstance(func, desc)
+        #    ), None
+        #)
+        #if desc:
+        #    func = func.__func__
+
         enforcer = Enforcer(
             func,
             require_args=require_args,
