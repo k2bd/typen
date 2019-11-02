@@ -122,6 +122,32 @@ class TestEnforcer(unittest.TestCase):
             str(err.exception)
         )
 
+    def test_valdate_result_vanilla_function(self):
+        def example_function(a, b, c, d):
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_result(10)
+
+
+    def test_validate_result_with_type_hint(self):
+        def example_function(a, b, c, d) -> str:
+            pass
+        enforcer = Enforcer(example_function)
+
+        enforcer.verify_result("a")  # No errors
+
+        with self.assertRaises(ReturnTypeError) as err:
+            enforcer.verify_result(6)
+
+        self.assertEqual(
+            "The return type of 'example_function' must be <class 'str'>, "
+            "but a value of 6 <class 'int'> was returned.",
+            str(err.exception)
+        )
+        # Invalid return value is added to the exception
+        self.assertEqual(err.exception.return_value, 6)
+
 
 class TestStrictEnforcer(unittest.TestCase):
     pass
