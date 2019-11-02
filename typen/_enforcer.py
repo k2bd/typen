@@ -70,8 +70,8 @@ class Enforcer:
                     traits[arg_name].astype(arg_type.dtype, casting="safe")
                 except TypeError:
                     msg = (
-                        "The {!r} parameter of {!r} cannot be cast to an array"
-                        " of dtype {!r}"
+                        "The {!r} parameter of {!r} could not be cast to an "
+                        "array of dtype {!r}"
                     )
                     raise ParameterTypeError(
                         msg.format(
@@ -108,7 +108,7 @@ class Enforcer:
                 value.astype(self.returns.dtype, casting="safe")
             except TypeError:
                 msg = (
-                    "The return value of {!r} cannot be cast to an array"
+                    "The return value of {!r} could not be cast to an array"
                     " of dtype {!r}"
                 )
                 exception = ReturnTypeError(
