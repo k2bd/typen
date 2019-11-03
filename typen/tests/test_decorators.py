@@ -42,7 +42,7 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
 
         with self.assertRaises(ParameterTypeError) as err:
-            new_func(b=1.0, a=2.0)
+            new_func(b=1.0, a=2)
 
         self.assertEqual(
             "The 'b' parameter of 'example_function' must be <class 'int'>, "

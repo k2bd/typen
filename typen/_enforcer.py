@@ -106,19 +106,23 @@ class Enforcer:
         class FunctionSignature(HasTraits):
             pass
 
-        self.fs = FunctionSignature()
-        self.rt = FunctionSignature()
+        fs = FunctionSignature()
+        rt = FunctionSignature()
 
         for arg in self.args:
-            self.fs.add_trait(arg.name, arg.type)
+            fs.add_trait(arg.name, arg.type)
+            arg.validator = fs.trait(arg.name)
 
         if self.packed_args_spec is not None:
-            self.fs.add_trait(self.packed_args_name, self.packed_args_spec)
+            fs.add_trait(self.packed_args_name, self.packed_args_spec)
+            self.packed_args_validator = fs.trait(self.packed_args_name)
 
         if self.packed_kwargs_spec is not None:
-            self.fs.add_trait(self.packed_kwargs_name, self.packed_kwargs_spec)
+            fs.add_trait(self.packed_kwargs_name, self.packed_kwargs_spec)
+            self.packed_kwargs_validator = fs.trait(self.packed_kwargs_name)
 
-        self.rt.add_trait("result", self.returns)
+        rt.add_trait("result", self.returns)
+        self.result_validator = rt.trait("result")
 
     def verify_args(self, passed_args, passed_kwargs):
         if self.ignored_self_name is not None:
@@ -184,27 +188,24 @@ class Enforcer:
                         )
                     )
 
-        try:
-            self.fs.trait_set(**traits)
-        except TraitError as err:
-            name = err.name
-            expt_type, = [arg.type for arg in self.args if arg.name == name]
-            value = traits[name]
-            msg = (
-                "The {!r} parameter of {!r} must be {!r}, "
-                "but a value of {!r} {!r} was specified."
-            )
-            raise ParameterTypeError(
-                msg.format(name, self.func.__name__, expt_type, value, type(value))
-            ) from None
+        for arg in self.args:
+            if arg.name in traits:
+                value = traits[arg.name]
+                try:
+                    arg.validator.validate(None, None, value)
+                except TraitError:
+                    msg = (
+                        "The {!r} parameter of {!r} must be {!r}, "
+                        "but a value of {!r} {!r} was specified."
+                    )
+                    raise ParameterTypeError(
+                        msg.format(arg.name, self.func.__name__, arg.type, value, type(value))
+                    ) from None
 
         if self.packed_args_spec is not None:
-            name = self.packed_args_name
-            spec = self.packed_args_spec
             for value in packed_args:
-                to_set = {name: value}
                 try:
-                    self.fs.trait_set(**to_set)
+                    self.packed_args_validator.validate(None, None, value)
                 except TraitError:
                     msg = (
                         "The {!r} parameters of {!r} must be {!r}, "
@@ -214,18 +215,15 @@ class Enforcer:
                         msg.format(
                             self.packed_args_name,
                             self.func.__name__,
-                            spec,
+                            self.packed_args_spec,
                             value,
                             type(value)
                         )
                     ) from None
         if self.packed_kwargs_spec is not None:
-            name = self.packed_kwargs_name
-            spec = self.packed_kwargs_spec
             for key, value in packed_kwargs.items():
-                to_set = {name: value}
                 try:
-                    self.fs.trait_set(**to_set)
+                    self.packed_kwargs_validator.validate(None, None, value)
                 except TraitError:
                     msg = (
                         "The {!r} keywords of {!r} must have values of type "
@@ -235,7 +233,7 @@ class Enforcer:
                         msg.format(
                             self.packed_kwargs_name,
                             self.func.__name__,
-                            spec,
+                            self.packed_kwargs_spec,
                             key,
                             value,
                             type(value),
@@ -260,7 +258,7 @@ class Enforcer:
                 raise exception
 
         try:
-            self.rt.trait_set(result=value)
+            self.result_validator.validate(None, None, value)
         except TraitError:
             msg = (
                 "The return type of {!r} must be {!r}, "
@@ -276,6 +274,7 @@ class Arg:
     def __init__(self, name, type):
         self.name = name
         self.type = type
+        self.validator = None
 
 
 def random_attribute_name():

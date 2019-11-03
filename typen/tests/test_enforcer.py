@@ -113,10 +113,10 @@ class TestEnforcer(unittest.TestCase):
         with self.assertRaises(ParameterTypeError) as err:
             enforcer.verify_args([], {"d": 10, "c": 200, "b": "cc", "a": "y"})
 
-        # The first invalid kwarg raises
+        # The first defined kwarg raises
         self.assertEqual(
-            "The 'c' parameter of 'example_function' must be <class 'str'>, "
-            "but a value of 200 <class 'int'> was specified.",
+            "The 'a' parameter of 'example_function' must be <class 'int'>, "
+            "but a value of 'y' <class 'str'> was specified.",
             str(err.exception)
         )
 
