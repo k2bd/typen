@@ -167,16 +167,17 @@ class Enforcer:
             if key not in traits:
                 traits[key] = value
 
-        # Extra validation for numpy array dtypes
         for arg in self.args:
-            arg_name = arg.name
-            arg_type = arg.type
-            if arg_name not in traits:
+            if arg.type is UNSPECIFIED:
                 continue
-            trait = traits[arg_name]
-            if isinstance(arg_type, Array) and isinstance(trait, np.ndarray):
+
+            # Extra validation for numpy array dtypes
+            if arg.name not in traits:
+                continue
+            trait = traits[arg.name]
+            if isinstance(arg.type, Array) and isinstance(trait, np.ndarray):
                 try:
-                    traits[arg_name].astype(arg_type.dtype, casting="safe")
+                    traits[arg.name].astype(arg.type.dtype, casting="safe")
                 except TypeError:
                     msg = (
                         "The {!r} parameter of {!r} could not be cast to an "
@@ -184,27 +185,23 @@ class Enforcer:
                     )
                     raise ParameterTypeError(
                         msg.format(
-                            arg_name,
+                            arg.name,
                             self.func.__name__,
-                            arg_type.dtype
+                            arg.type.dtype
                         )
                     )
 
-        for arg in self.args:
-            if arg.type is UNSPECIFIED:
-                continue
-            if arg.name in traits:
-                value = traits[arg.name]
-                try:
-                    arg.validator.validate(None, None, value)
-                except TraitError:
-                    msg = (
-                        "The {!r} parameter of {!r} must be {!r}, "
-                        "but a value of {!r} {!r} was specified."
-                    )
-                    raise ParameterTypeError(
-                        msg.format(arg.name, self.func.__name__, arg.type, value, type(value))
-                    ) from None
+            value = traits[arg.name]
+            try:
+                arg.validator.validate(None, None, value)
+            except TraitError:
+                msg = (
+                    "The {!r} parameter of {!r} must be {!r}, "
+                    "but a value of {!r} {!r} was specified."
+                )
+                raise ParameterTypeError(
+                    msg.format(arg.name, self.func.__name__, arg.type, value, type(value))
+                ) from None
 
         if self.packed_args_spec is not UNSPECIFIED:
             for value in packed_args:
