@@ -4,7 +4,8 @@ from string import ascii_lowercase
 
 import numpy as np
 
-from traits.api import Any, Array, HasTraits, TraitError
+from traits.api import Any, Array, HasTraits, TraitError, Trait
+from traits.has_traits import _check_trait, _trait_for
 
 from typen.exceptions import (
     ParameterTypeError,
@@ -103,6 +104,17 @@ class Enforcer:
             if v.default is not inspect.Parameter.empty
         }
 
+        class FunctionSignature(HasTraits):
+            pass
+
+        self.fs = FunctionSignature()
+        self.rt = FunctionSignature()
+
+        for arg in self.args:
+            self.fs.add_trait(arg.name, arg.type)
+
+        self.rt.add_trait("result", self.returns)
+
     def verify_args(self, passed_args, passed_kwargs):
         if self.ignored_self_name is not None:
             # handle the rare case that self is passed as a kwarg
@@ -114,11 +126,6 @@ class Enforcer:
                 }
             else:
                 passed_args = passed_args[1:]
-
-        class FunctionSignature(HasTraits):
-            pass
-
-        fs = FunctionSignature()
 
         packed_args = []
         packed_kwargs = {}
@@ -144,9 +151,6 @@ class Enforcer:
         # Handle the corner case that "self" is the name of a normal parameter
         if "self" in traits:
             traits[self._self] = traits.pop("self")
-
-        for arg in self.args:
-            fs.add_trait(arg.name, arg.type)
 
         for key, value in self.default_kwargs.items():
             if key not in traits:
@@ -176,7 +180,7 @@ class Enforcer:
                     )
 
         try:
-            fs.trait_set(**traits)#TODO: compare timings with validate_trait on each arg
+            self.fs.trait_set(**traits)#TODO: compare timings with validate_trait on each arg
         except TraitError as err:
             name = err.name
             expt_type, = [arg.type for arg in self.args if arg.name == name]
@@ -192,11 +196,11 @@ class Enforcer:
         if self.packed_args_spec is not None:
             name = self.packed_args_name
             spec = self.packed_args_spec
-            fs.add_trait(name, spec)
+            self.fs.add_trait(name, spec)
             for value in packed_args:
                 to_set = {name: value}
                 try:
-                    fs.trait_set(**to_set)
+                    self.fs.trait_set(**to_set)
                 except TraitError:
                     msg = (
                         "The {!r} parameters of {!r} must be {!r}, "
@@ -214,11 +218,11 @@ class Enforcer:
         if self.packed_kwargs_spec is not None:
             name = self.packed_kwargs_name
             spec = self.packed_kwargs_spec
-            fs.add_trait(name, spec)
+            self.fs.add_trait(name, spec)
             for key, value in packed_kwargs.items():
                 to_set = {name: value}
                 try:
-                    fs.trait_set(**to_set)
+                    self.fs.trait_set(**to_set)
                 except TraitError:
                     msg = (
                         "The {!r} keywords of {!r} must have values of type "
@@ -236,11 +240,6 @@ class Enforcer:
                     ) from None
 
     def verify_result(self, value):
-        class ReturnType(HasTraits):
-            pass
-
-        rt = ReturnType()
-        rt.add_trait("result", self.returns)
 
         # Extra validation for numpy array dtypes
         if isinstance(self.returns, Array) and isinstance(value, np.ndarray):
@@ -258,7 +257,7 @@ class Enforcer:
                 raise exception
 
         try:
-            rt.trait_set(result=value)
+            self.rt.trait_set(result=value)
         except TraitError:
             msg = (
                 "The return type of {!r} must be {!r}, "
