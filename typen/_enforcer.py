@@ -4,8 +4,7 @@ from string import ascii_lowercase
 
 import numpy as np
 
-from traits.api import Any, Array, HasTraits, TraitError, Trait
-from traits.has_traits import _check_trait, _trait_for
+from traits.api import Any, Array, HasTraits, TraitError
 
 from typen.exceptions import (
     ParameterTypeError,
@@ -113,6 +112,12 @@ class Enforcer:
         for arg in self.args:
             self.fs.add_trait(arg.name, arg.type)
 
+        if self.packed_args_spec is not None:
+            self.fs.add_trait(self.packed_args_name, self.packed_args_spec)
+
+        if self.packed_kwargs_spec is not None:
+            self.fs.add_trait(self.packed_kwargs_name, self.packed_kwargs_spec)
+
         self.rt.add_trait("result", self.returns)
 
     def verify_args(self, passed_args, passed_kwargs):
@@ -180,7 +185,7 @@ class Enforcer:
                     )
 
         try:
-            self.fs.trait_set(**traits)#TODO: compare timings with validate_trait on each arg
+            self.fs.trait_set(**traits)
         except TraitError as err:
             name = err.name
             expt_type, = [arg.type for arg in self.args if arg.name == name]
@@ -196,7 +201,6 @@ class Enforcer:
         if self.packed_args_spec is not None:
             name = self.packed_args_name
             spec = self.packed_args_spec
-            self.fs.add_trait(name, spec)
             for value in packed_args:
                 to_set = {name: value}
                 try:
@@ -218,7 +222,6 @@ class Enforcer:
         if self.packed_kwargs_spec is not None:
             name = self.packed_kwargs_name
             spec = self.packed_kwargs_spec
-            self.fs.add_trait(name, spec)
             for key, value in packed_kwargs.items():
                 to_set = {name: value}
                 try:
