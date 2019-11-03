@@ -66,8 +66,6 @@ class Enforcer:
 
         if self.ignored_self_name is not None:
             params.pop(self.ignored_self_name)
-            # Ignore any annotations on self
-            #TODO:test
             if self.ignored_self_name in spec:
                 spec.pop(self.ignored_self_name)
 
@@ -178,7 +176,7 @@ class Enforcer:
                     )
 
         try:
-            fs.trait_set(**traits)
+            fs.trait_set(**traits)#TODO: compare timings with validate_trait on each arg
         except TraitError as err:
             name = err.name
             expt_type, = [arg.type for arg in self.args if arg.name == name]

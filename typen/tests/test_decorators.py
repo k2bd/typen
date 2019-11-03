@@ -166,6 +166,9 @@ class TestEnforceTypeHints(unittest.TestCase):
     def test_enforce_type_hints_packed_args_kwargs_hint(self):
         pass
 
+    def test_enforce_type_hints_packed_args_kwargs_method(self):
+        pass
+
     def test_enforce_type_hints_on_init_method(self):
         class ExClass:
             @enforce_type_hints
@@ -576,7 +579,6 @@ class TestEnforceTypeHints(unittest.TestCase):
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
 #TODO: test strict self not named self
-#TODO: test all the kinds of methods here https://stackoverflow.com/questions/19314405/how-to-detect-is-decorator-has-been-applied-to-method-or-function
-#TODO: test args, kwargs (both with and without type hints)
 #TODO: test packed args, kwargs with self
 #TODO: test packed arg and kwarg numpy arrays
+#TODO: test method with self as an arg or kwarg name
