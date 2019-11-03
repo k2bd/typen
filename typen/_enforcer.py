@@ -14,6 +14,8 @@ from typen.exceptions import (
     UnspecifiedReturnTypeError,
 )
 
+UNSPECIFIED = object()
+
 
 class Enforcer:
     def __init__(
@@ -28,10 +30,10 @@ class Enforcer:
         # Support for annotations on arg and kwarg packing
         self.packed_args_name = None
         self.packed_args_pos = None
-        self.packed_args_spec = None
+        self.packed_args_spec = UNSPECIFIED
         self.packed_kwargs_name = None
         self.num_normal_keywords = None
-        self.packed_kwargs_spec = None
+        self.packed_kwargs_spec = UNSPECIFIED
         for i, (name, param) in enumerate(list(params.items())):
             if param.kind == inspect.Parameter.VAR_POSITIONAL:
                 self.packed_args_name = name
@@ -79,7 +81,7 @@ class Enforcer:
             if "self" in spec:
                 spec[self._self] = spec.pop("self")
 
-        unspecified = {key: Any for key in params.keys() if key not in spec}
+        unspecified = {key: UNSPECIFIED for key in params.keys() if key not in spec}
         if unspecified and require_args:
             msg = "The following parameters must be given type hints: {!r}"
             raise UnspecifiedParameterTypeError(msg.format(list(unspecified.keys())))
@@ -92,7 +94,7 @@ class Enforcer:
             if require_return:
                 msg = "A return type hint must be specified."
                 raise UnspecifiedReturnTypeError(msg)
-            self.returns = Any
+            self.returns = UNSPECIFIED
 
         # Restore order of args
         self.args = [Arg(k, spec[k]) for k in params.keys()]
@@ -113,11 +115,11 @@ class Enforcer:
             fs.add_trait(arg.name, arg.type)
             arg.validator = fs.trait(arg.name)
 
-        if self.packed_args_spec is not None:
+        if self.packed_args_spec is not UNSPECIFIED:
             fs.add_trait(self.packed_args_name, self.packed_args_spec)
             self.packed_args_validator = fs.trait(self.packed_args_name)
 
-        if self.packed_kwargs_spec is not None:
+        if self.packed_kwargs_spec is not UNSPECIFIED:
             fs.add_trait(self.packed_kwargs_name, self.packed_kwargs_spec)
             self.packed_kwargs_validator = fs.trait(self.packed_kwargs_name)
 
@@ -189,6 +191,8 @@ class Enforcer:
                     )
 
         for arg in self.args:
+            if arg.type is UNSPECIFIED:
+                continue
             if arg.name in traits:
                 value = traits[arg.name]
                 try:
@@ -202,7 +206,7 @@ class Enforcer:
                         msg.format(arg.name, self.func.__name__, arg.type, value, type(value))
                     ) from None
 
-        if self.packed_args_spec is not None:
+        if self.packed_args_spec is not UNSPECIFIED:
             for value in packed_args:
                 try:
                     self.packed_args_validator.validate(None, None, value)
@@ -220,7 +224,7 @@ class Enforcer:
                             type(value)
                         )
                     ) from None
-        if self.packed_kwargs_spec is not None:
+        if self.packed_kwargs_spec is not UNSPECIFIED:
             for key, value in packed_kwargs.items():
                 try:
                     self.packed_kwargs_validator.validate(None, None, value)
@@ -241,6 +245,8 @@ class Enforcer:
                     ) from None
 
     def verify_result(self, value):
+        if self.returns is UNSPECIFIED:
+            return
 
         # Extra validation for numpy array dtypes
         if isinstance(self.returns, Array) and isinstance(value, np.ndarray):
