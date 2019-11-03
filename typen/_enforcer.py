@@ -168,12 +168,10 @@ class Enforcer:
                 traits[key] = value
 
         for arg in self.args:
-            if arg.type is UNSPECIFIED:
+            if arg.type is UNSPECIFIED or arg.name not in traits:
                 continue
 
             # Extra validation for numpy array dtypes
-            if arg.name not in traits:
-                continue
             trait = traits[arg.name]
             if isinstance(arg.type, Array) and isinstance(trait, np.ndarray):
                 try:
