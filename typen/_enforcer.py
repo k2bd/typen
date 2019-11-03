@@ -71,16 +71,6 @@ class Enforcer:
             if self.ignored_self_name in spec:
                 spec.pop(self.ignored_self_name)
 
-        # Handle the edge case that we have an actual arg named "self"
-        # This is done by replacing the "self" attribute for validation with a
-        # random name.
-        self._self = None
-        if "self" in params:
-            self._self = random_attribute_name()
-            params[self._self] = params.pop("self")
-            if "self" in spec:
-                spec[self._self] = spec.pop("self")
-
         unspecified = {key: UNSPECIFIED for key in params.keys() if key not in spec}
         if unspecified and require_args:
             msg = "The following parameters must be given type hints: {!r}"
@@ -153,29 +143,23 @@ class Enforcer:
                 list(passed_kwargs.keys())[:self.num_normal_keywords-1]
             }
 
-        traits = {}
-        for i, arg in enumerate(passed_args):
-            expt_arg = self.args[i]
-            traits[expt_arg.name] = arg
-        traits.update(**passed_kwargs)
+        for i, arg in enumerate(self.args):
+            if arg.type is UNSPECIFIED:
+                continue
 
-        # Handle the corner case that "self" is the name of a normal parameter
-        if "self" in traits:
-            traits[self._self] = traits.pop("self")
-
-        for key, value in self.default_kwargs.items():
-            if key not in traits:
-                traits[key] = value
-
-        for arg in self.args:
-            if arg.type is UNSPECIFIED or arg.name not in traits:
+            if i < len(passed_args):
+                value = passed_args[i]
+            elif arg.name in passed_kwargs:
+                value = passed_kwargs[arg.name]
+            elif arg.name in self.default_kwargs:
+                value = self.default_kwargs[arg.name]
+            else:
                 continue
 
             # Extra validation for numpy array dtypes
-            trait = traits[arg.name]
-            if isinstance(arg.type, Array) and isinstance(trait, np.ndarray):
+            if isinstance(arg.type, Array) and isinstance(value, np.ndarray):
                 try:
-                    traits[arg.name].astype(arg.type.dtype, casting="safe")
+                    value.astype(arg.type.dtype, casting="safe")
                 except TypeError:
                     msg = (
                         "The {!r} parameter of {!r} could not be cast to an "
@@ -189,7 +173,6 @@ class Enforcer:
                         )
                     )
 
-            value = traits[arg.name]
             try:
                 arg.validator.validate(None, None, value)
             except TraitError:
