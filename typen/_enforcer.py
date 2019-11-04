@@ -259,7 +259,3 @@ class Arg:
         self.name = name
         self.type = type
         self.validator = None
-
-
-def random_attribute_name():
-    return "".join(random.choice(ascii_lowercase) for _ in range(15))
