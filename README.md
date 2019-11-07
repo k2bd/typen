@@ -70,15 +70,15 @@ Type hints on packed parameters apply to all values passed through that packing.
 
 ```python
 @enforce_type_hints
-def example_function(*foos: int, **bars: str) -> bool:
+def foos_vs_bars(*foos: int, **bars: str) -> bool:
     return sum(foos) >= len(bars)
 
 
-example_function(1, 2, 3, a="a", b="b", c="c")  # True
+foos_vs_bars(1, 2, 3, a="a", b="b", c="c")  # True
 
-example_function(2, 3, 5, d=4)  # ParameterTypeError
+foos_vs_bars(2, 3, 5, d=4)  # ParameterTypeError
 
-example_function(2, "three", 5, e="e")  # ParameterTypeError
+foos_vs_bars(2, "three", 5, e="e")  # ParameterTypeError
 ```
 
 ## Method Decoration
@@ -93,12 +93,12 @@ class ExClass:
 
     @classmethod
     @strict_type_hints
-    def ex_method1(cls, a: int, c: int) -> int:
+    def a_class_method(cls, a: int, c: int) -> int:
         ...
 
     @staticmethod
     @strict_type_hints
-    def ex_method1(a: int, c: int) -> int:
+    def a_static_method(a: int, c: int) -> int:
         ...
 
 ```
