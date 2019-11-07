@@ -511,7 +511,7 @@ class TestEnforceTypeHints(unittest.TestCase):
         self.assertEqual(18.0, err.exception.return_value)
 
     def test_enforce_type_hints_incorrect_self_annotations(self):
-        # The results of this are inconsistent. See k2bd/typen#3
+        # TODO: The results of this are inconsistent. See k2bd/typen#3
         class ExClass:
             @enforce_type_hints
             def __init__(self: int):
