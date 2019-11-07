@@ -2,8 +2,6 @@ import inspect
 import random
 from string import ascii_lowercase
 
-import numpy as np
-
 from traits.api import Any, Array, HasTraits, TraitError
 
 from typen.exceptions import (
@@ -156,23 +154,6 @@ class Enforcer:
             else:
                 continue
 
-            # Extra validation for numpy array dtypes
-            if isinstance(arg.type, Array) and isinstance(value, np.ndarray):
-                try:
-                    value.astype(arg.type.dtype, casting="safe")
-                except TypeError:
-                    msg = (
-                        "The {!r} parameter of {!r} could not be cast to an "
-                        "array of dtype {!r}"
-                    )
-                    raise ParameterTypeError(
-                        msg.format(
-                            arg.name,
-                            self.func.__name__,
-                            arg.type.dtype
-                        )
-                    )
-
             try:
                 arg.validator.validate(None, None, value)
             except TraitError:
@@ -181,7 +162,8 @@ class Enforcer:
                     "but a value of {!r} {!r} was specified."
                 )
                 raise ParameterTypeError(
-                    msg.format(arg.name, self.func.__name__, arg.type, value, type(value))
+                    msg.format(
+                        arg.name, self.func.__name__, arg.type, value, type(value))
                 ) from None
 
         if self.packed_args_spec is not UNSPECIFIED:
@@ -225,21 +207,6 @@ class Enforcer:
     def verify_result(self, value):
         if self.returns is UNSPECIFIED:
             return
-
-        # Extra validation for numpy array dtypes
-        if isinstance(self.returns, Array) and isinstance(value, np.ndarray):
-            try:
-                value.astype(self.returns.dtype, casting="safe")
-            except TypeError:
-                msg = (
-                    "The return value of {!r} could not be cast to an array"
-                    " of dtype {!r}"
-                )
-                exception = ReturnTypeError(
-                    msg.format(self.func.__name__, self.returns.dtype)
-                )
-                exception.return_value = value
-                raise exception
 
         try:
             self.result_validator.validate(None, None, value)

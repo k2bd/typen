@@ -39,7 +39,7 @@ def complicated_function(
         a: Either(Str, Int),  # Either a string or an int
         b: Enum(2, 5, "foo"),  # One of a specific set of values
         c: Instance(MyClass),  # Class instances
-        d: Array(dtype="float64", size=(None, 2)),  # Numpy array validation
+        d: Array(size=(None, 2)),  # Numpy array validation
         ) -> Tuple(Str, Either(Str, Int)):  # Complicated return specification
     ...
 ```
