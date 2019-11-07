@@ -23,6 +23,7 @@ def give_int(a) -> int:
     return a
 
 give_int(1)  # 1
+
 give_int("a")  # ReturnTypeError
 ```
 
@@ -74,7 +75,9 @@ def example_function(*foos: int, **bars: str) -> bool:
 
 
 example_function(1, 2, 3, a="a", b="b", c="c")  # True
+
 example_function(2, 3, 5, d=4)  # ParameterTypeError
+
 example_function(2, "three", 5, e="e")  # ParameterTypeError
 ```
 
