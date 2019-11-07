@@ -46,6 +46,19 @@ def complicated_function(
 
 ## Packed args and kwargs
 
+Type hints on packed parameters apply to all values passed through that packing.
+
+```python
+@enforce_type_hints
+def example_function(*foos: int, **bars: str) -> bool:
+    return sum(foos) >= len(bars)
+
+
+example_function(1, 2, 3, a="a", b="b", c="c")  # True
+example_function(2, 3, 5, d=4)  # ParameterTypeError
+example_function(2, "three", 5, e="e")  # ParameterTypeError
+```
+
 ## Method Decoration
 
 Methods can be decorated as well. `self`-references are exempt from strict type hint requirements, as is the return type of `__init__`.
@@ -116,5 +129,3 @@ try:
 except ReturnTypeError as err:
     print(err.return_value)  # a
 ```
-
-## Shortcomings
