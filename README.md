@@ -48,16 +48,12 @@ def complicated_function(
 
 ## Method Decoration
 
-Methods can be decorated as well. `self` (regardless of its name) is exempt from strict type hint requirements, as is the return type of `__init__`.
+Methods can be decorated as well. `self`-references are exempt from strict type hint requirements, as is the return type of `__init__`.
 
 ```python
 class ExClass:
     @strict_type_hints
     def __init__(self, a: int, b: int):
-        ...
-
-    @strict_type_hints
-    def ex_method(this, self: int) -> int:
         ...
 
     @classmethod
