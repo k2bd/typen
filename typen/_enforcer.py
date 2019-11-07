@@ -14,6 +14,9 @@ from typen.exceptions import (
 
 UNSPECIFIED = object()
 
+#: List of methods exempt from strict return type annotation
+RETURN_EXEMPT = ["__init__"]
+
 
 class Enforcer:
     def __init__(
@@ -24,6 +27,9 @@ class Enforcer:
         self.func = func
         spec = func.__annotations__
         params = dict(inspect.signature(func).parameters)
+
+        if ignore_self:
+            require_return = require_return and func.__name__ not in RETURN_EXEMPT
 
         # Support for annotations on arg and kwarg packing
         self.packed_args_name = None

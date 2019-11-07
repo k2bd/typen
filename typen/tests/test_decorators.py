@@ -576,6 +576,52 @@ class TestEnforceTypeHints(unittest.TestCase):
         inst.method6()
 
 
+class TestStrictTypeHints(unittest.TestCase):
+    def test_strict_type_hints_on_method(self):
+        class ExClass:
+            # __init__ is exempt from return hint requirement
+            @strict_type_hints
+            def __init__(self, a: int, b: int):
+                pass
+
+            @strict_type_hints
+            def ex_method(self, c: int, d: float) -> float:
+                pass
+
+    def test_strict_type_hints_on_method_self_not_named_self(self):
+        class ExClass:
+            @strict_type_hints
+            def __init__(this, self: float):
+                pass
+
+            @strict_type_hints
+            def ex_method(this, self: int) -> int:
+                pass
+
+    def test_strict_type_hints_on_class_method(self):
+        class ExClass:
+            @classmethod
+            @strict_type_hints
+            def ex_method1(cls, a: int, c: int) -> int:
+                pass
+
+            @strict_type_hints
+            @classmethod
+            def ex_method2(cls, a: int, c: int) -> int:
+                pass
+
+    def test_strict_type_hints_on_static_method(self):
+        class ExClass:
+            @staticmethod
+            @strict_type_hints
+            def ex_method1(a: int, c: int) -> int:
+                pass
+
+            @strict_type_hints
+            @staticmethod
+            def ex_method2(a: int, c: int) -> int:
+                pass
+
 #TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
 #TODO: test strict self not named self
