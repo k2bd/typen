@@ -44,6 +44,25 @@ def complicated_function(
     ...
 ```
 
+## Strict Enforcement
+
+Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception on decoration. Without strict enforcement, parameters and return values without type hints can have any value.
+
+```python
+from typen import strict_type_hints
+
+
+@strict_type_hints
+def add_numbers(a, b: float) -> float:  # UnspecifiedParameterTypeError
+    return a + b
+```
+
+```python
+@strict_type_hints
+def add_numbers(a: float, b: float):  # UnspecifiedReturnTypeError
+    return a + b
+```
+
 ## Packed args and kwargs
 
 Type hints on packed parameters apply to all values passed through that packing.
@@ -79,25 +98,6 @@ class ExClass:
     def ex_method1(a: int, c: int) -> int:
         ...
 
-```
-
-## Strict Enforcement
-
-Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception on decoration. Without strict enforcement, parameters and return values without type hints can have any value.
-
-```python
-from typen import strict_type_hints
-
-
-@strict_type_hints
-def add_numbers(a, b: float) -> float:  # UnspecifiedParameterTypeError
-    return a + b
-```
-
-```python
-@strict_type_hints
-def add_numbers(a: float, b: float):  # UnspecifiedReturnTypeError
-    return a + b
 ```
 
 ## Coercion
