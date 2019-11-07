@@ -47,7 +47,7 @@ def complicated_function(
 
 ## Strict Enforcement
 
-Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception on decoration. Without strict enforcement, parameters and return values without type hints can have any value.
+Type hints can also be required with the `@strict_type_hints` decorator. Both of the following examples will raise an exception when the function is first called. Without strict enforcement, parameters and return values without type hints can have any value.
 
 ```python
 from typen import strict_type_hints

@@ -577,6 +577,24 @@ class TestEnforceTypeHints(unittest.TestCase):
 
 
 class TestStrictTypeHints(unittest.TestCase):
+    def test_strict_type_hints(self):
+        def example_function(a: int, b: float = 0.5) -> str:
+            pass
+        strict_type_hints(example_function)
+
+    def test_strict_type_hints_missing_arg(self):
+        def example_function(a, b: float = 0.5) -> str:
+            pass
+        new_func = strict_type_hints(example_function)
+
+        with self.assertRaises(UnspecifiedParameterTypeError) as err:
+            new_func(1, 2)
+
+        self.assertEqual(
+            "The following parameters must be given type hints: ['a']",
+            str(err.exception)
+        )
+
     def test_strict_type_hints_on_method(self):
         class ExClass:
             # __init__ is exempt from return hint requirement
@@ -586,7 +604,10 @@ class TestStrictTypeHints(unittest.TestCase):
 
             @strict_type_hints
             def ex_method(self, c: int, d: float) -> float:
-                pass
+                return c * d
+
+        inst = ExClass(1, 2)
+        inst.ex_method(1, 2)
 
     def test_strict_type_hints_on_method_self_not_named_self(self):
         class ExClass:
@@ -596,7 +617,10 @@ class TestStrictTypeHints(unittest.TestCase):
 
             @strict_type_hints
             def ex_method(this, self: int) -> int:
-                pass
+                return 2*self
+
+        inst = ExClass(1)
+        inst.ex_method(2)
 
     def test_strict_type_hints_on_class_method(self):
         class ExClass:
@@ -609,6 +633,7 @@ class TestStrictTypeHints(unittest.TestCase):
             @classmethod
             def ex_method2(cls, a: int, c: int) -> int:
                 pass
+#TODO: complete test, and also test strict hints failures
 
     def test_strict_type_hints_on_static_method(self):
         class ExClass:
@@ -622,7 +647,6 @@ class TestStrictTypeHints(unittest.TestCase):
             def ex_method2(a: int, c: int) -> int:
                 pass
 
-#TODO: test strict decorators on methods
 #TODO: test passing self as kwarg
 #TODO: test strict self not named self
 #TODO: test packed args, kwargs with self
