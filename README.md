@@ -54,14 +54,18 @@ from typen import strict_type_hints
 
 
 @strict_type_hints
-def add_numbers(a, b: float) -> float:  # UnspecifiedParameterTypeError
+def add_numbers(a, b: float) -> float:
     return a + b
+
+add_numbers(1, 2)  # UnspecifiedParameterTypeError
 ```
 
 ```python
 @strict_type_hints
-def add_numbers(a: float, b: float):  # UnspecifiedReturnTypeError
+def add_numbers(a: float, b: float):
     return a + b
+
+add_numbers(1, 2)  # UnspecifiedReturnTypeError
 ```
 
 ## Packed args and kwargs
