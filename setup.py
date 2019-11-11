@@ -21,5 +21,7 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development",
     ],
+    license="MIT",
+    install_requires=["traits", "numpy"],
     python_requires='>=3.6',
 )
