@@ -1,8 +1,1 @@
-# Include the README
-include *.md
-
-# Include the license file
-include LICENSE
-
-# Include the changelog
-include CHANGELOG
+include *.md LICENSE CHANGELOG
