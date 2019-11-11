@@ -87,7 +87,7 @@ foos_vs_bars(2, "three", 5, e="e")  # ParameterTypeError
 
 ## Method Decoration
 
-Methods can be decorated as well. `self`-references are exempt from strict type hint requirements, as is the return type of `__init__`.
+Methods can be decorated as well. `self`-references are exempt from strict type hint requirements, as is the return type of `__init__`. `@enforce_type_hints` and `@strict_type_hints` should decorate the product of the `@classmethod` or `@staticmethod` decorators.
 
 ```python
 class ExClass:
@@ -95,13 +95,13 @@ class ExClass:
     def __init__(self, a: int, b: int):
         ...
 
-    @classmethod
     @strict_type_hints
+    @classmethod
     def a_class_method(cls, a: int, c: int) -> int:
         ...
 
-    @staticmethod
     @strict_type_hints
+    @staticmethod
     def a_static_method(a: int, c: int) -> int:
         ...
 

@@ -1,11 +1,7 @@
 import unittest
 
-from traits.api import Float, Int, List, Str
-
 from typen._decorators import (
     enforce_type_hints,
-    strict_parameter_hints,
-    strict_return_hint,
     strict_type_hints,
 )
 from typen.exceptions import (
@@ -161,13 +157,40 @@ class TestEnforceTypeHints(unittest.TestCase):
         )
 
     def test_enforce_type_hints_packed_args_kwargs_vanilla(self):
-        pass#TODO
+        def example_function(*foos, **bars):
+            return sum(foos) >= len(bars)
+        new_func = enforce_type_hints(example_function)
+
+        self.assertEqual(new_func(1, 2, 3, a="a", b="b", c="c"), True)
 
     def test_enforce_type_hints_packed_args_kwargs_hint(self):
-        pass#TODO
+        def example_function(*foos: int, **bars: str) -> bool:
+            return sum(foos) >= len(bars)
+        new_func = enforce_type_hints(example_function)
+
+        self.assertEqual(new_func(1, 2, 3, a="a", b="b", c="c"), True)
+
+        with self.assertRaises(ParameterTypeError):
+            new_func(2, 3, 5, d=4)
+
+        with self.assertRaises(ParameterTypeError):
+            new_func(2, "three", 5, e="e")
 
     def test_enforce_type_hints_packed_args_kwargs_method(self):
-        pass#TODO
+        class ExClass:
+            @enforce_type_hints
+            def example_method(self, *foos: int, **bars: str) -> bool:
+                return sum(foos) >= len(bars)
+
+        inst = ExClass()
+
+        self.assertEqual(inst.example_method(1, 2, 3, a="a", b="b", c="c"), True)
+
+        with self.assertRaises(ParameterTypeError):
+            inst.example_method(2, 3, 5, d=4)
+
+        with self.assertRaises(ParameterTypeError):
+            inst.example_method(2, "three", 5, e="e")
 
     def test_enforce_type_hints_on_init_method(self):
         class ExClass:
@@ -259,6 +282,15 @@ class TestEnforceTypeHints(unittest.TestCase):
             "but a value of 10.0 <class 'float'> was returned.",
             str(err.exception)
         )
+
+    def test_enforce_type_hints_self_passed_as_kwarg(self):
+        class ExClass:
+            @enforce_type_hints
+            def ex_method(self, a: int, b: float) -> float:
+                return a + b
+        inst = ExClass()
+
+        self.assertEqual(ExClass.ex_method(a=1, b=2, self=inst), 3)
 
     def test_enforce_type_hints_on_class_method_params(self):
         class ExClass:
@@ -579,8 +611,10 @@ class TestEnforceTypeHints(unittest.TestCase):
 class TestStrictTypeHints(unittest.TestCase):
     def test_strict_type_hints(self):
         def example_function(a: int, b: float = 0.5) -> str:
-            pass
-        strict_type_hints(example_function)
+            return "a"
+        new_func = strict_type_hints(example_function)
+
+        new_func(1, 2.5)  # No errors
 
     def test_strict_type_hints_missing_arg(self):
         def example_function(a, b: float = 0.5) -> str:
@@ -591,7 +625,61 @@ class TestStrictTypeHints(unittest.TestCase):
             new_func(1, 2)
 
         self.assertEqual(
-            "The following parameters must be given type hints: ['a']",
+            "The following parameters of 'example_function' must be given "
+            "type hints: ['a']",
+            str(err.exception)
+        )
+
+    def test_strict_type_hints_missing_return(self):
+        def example_function(a: int, b: float):
+            pass
+        new_func = strict_type_hints(example_function)
+
+        with self.assertRaises(UnspecifiedReturnTypeError) as err:
+            new_func(1, 2)
+
+        self.assertEqual(
+            "A return type hint must be specified for 'example_function'.",
+            str(err.exception)
+        )
+
+    def test_strict_type_hints_packed_args(self):
+        def example_function(a: str, *args: int) -> float:
+            return sum(args)
+        new_func = strict_type_hints(example_function)
+
+        self.assertEqual(new_func("aa", 2, 3, 4, 5), 14)
+
+    def test_strict_type_hints_packed_args_missing(self):
+        def example_function(a: str, *args) -> float:
+            return sum(args)
+        new_func = strict_type_hints(example_function)
+
+        with self.assertRaises(UnspecifiedParameterTypeError) as err:
+            new_func("aa", 2, 3, 4, 5)
+
+        self.assertEqual(
+            "Packed positional argument 'args' must be given a type hint",
+            str(err.exception)
+        )
+
+    def test_strict_type_hints_packed_kwargs(self):
+        def example_function(a: str, **kwargs: int) -> float:
+            return sum(kwargs.values())
+        new_func = strict_type_hints(example_function)
+
+        self.assertEqual(new_func("aa", b=2, c=3, d=4, e=5), 14)
+
+    def test_strict_type_hints_packed_kwargs_missing(self):
+        def example_function(a: str, **kwargs) -> float:
+            return sum(kwargs.values())
+        new_func = strict_type_hints(example_function)
+
+        with self.assertRaises(UnspecifiedParameterTypeError) as err:
+            new_func("aa", b=2, c=3, d=4, e=5)
+
+        self.assertEqual(
+            "Packed keyword argument 'kwargs' must be given a type hint",
             str(err.exception)
         )
 
@@ -624,31 +712,79 @@ class TestStrictTypeHints(unittest.TestCase):
 
     def test_strict_type_hints_on_class_method(self):
         class ExClass:
-            @classmethod
             @strict_type_hints
-            def ex_method1(cls, a: int, c: int) -> int:
-                pass
+            @classmethod
+            def ex_method(cls, a: int, c: int) -> int:
+                return a + c
 
-            @strict_type_hints
-            @classmethod
-            def ex_method2(cls, a: int, c: int) -> int:
-                pass
-#TODO: complete test, and also test strict hints failures
+        ExClass.ex_method(1, 2)
+
+    def test_strict_type_hints_on_class_method_missing(self):
+        with self.assertRaises(RuntimeError) as err:
+            class ExClass1:
+                @strict_type_hints
+                @classmethod
+                def ex_method(cls, a: int, c) -> int:
+                    return a + c
+
+        self.assertIsInstance(
+            err.exception.__cause__,
+            UnspecifiedParameterTypeError
+        )
+
+        with self.assertRaises(RuntimeError) as err:
+            class ExClass2:
+                @strict_type_hints
+                @classmethod
+                def ex_method(cls, a: int, c: int):
+                    return a + c
+
+        self.assertIsInstance(
+            err.exception.__cause__,
+            UnspecifiedReturnTypeError
+        )
 
     def test_strict_type_hints_on_static_method(self):
         class ExClass:
             @staticmethod
             @strict_type_hints
             def ex_method1(a: int, c: int) -> int:
-                pass
+                return a + c
 
             @strict_type_hints
             @staticmethod
             def ex_method2(a: int, c: int) -> int:
-                pass
+                return a + c
 
-#TODO: test passing self as kwarg
-#TODO: test strict self not named self
-#TODO: test packed args, kwargs with self
-#TODO: test packed arg and kwarg numpy arrays
-#TODO: test method with self as an arg or kwarg name
+        ExClass.ex_method1(1, 2)
+        ExClass.ex_method2(1, 2)
+
+        inst = ExClass()
+
+        inst.ex_method1(1, 2)
+        inst.ex_method2(1, 2)
+
+    def test_strict_type_hints_on_static_method_missing(self):
+        with self.assertRaises(RuntimeError) as err:
+            class ExClass1:
+                @strict_type_hints
+                @staticmethod
+                def ex_method(a, c: int) -> int:
+                    return a + c
+
+        self.assertIsInstance(
+            err.exception.__cause__,
+            UnspecifiedParameterTypeError
+        )
+
+        with self.assertRaises(RuntimeError) as err:
+            class ExClass3:
+                @strict_type_hints
+                @staticmethod
+                def ex_method(a: int, c: int):
+                    return a + c
+
+        self.assertIsInstance(
+            err.exception.__cause__,
+            UnspecifiedReturnTypeError
+        )

@@ -247,7 +247,8 @@ class TestStrictEnforcer(unittest.TestCase):
             Enforcer(example_function, require_args=True, require_return=False)
 
         self.assertEqual(
-            "The following parameters must be given type hints: ['a', 'c']",
+            "The following parameters of 'example_function' must be given "
+            "type hints: ['a', 'c']",
             str(err.exception)
         )
 
@@ -258,7 +259,7 @@ class TestStrictEnforcer(unittest.TestCase):
             Enforcer(example_function, require_args=False, require_return=True)
 
         self.assertEqual(
-            "A return type hint must be specified.",
+            "A return type hint must be specified for 'example_function'.",
             str(err.exception)
         )
 

@@ -1,13 +1,10 @@
 import inspect
-import random
-from string import ascii_lowercase
 
-from traits.api import Any, Array, HasTraits, TraitError
+from traits.api import HasTraits, TraitError
 
 from typen.exceptions import (
     ParameterTypeError,
     ReturnTypeError,
-    TypenError,
     UnspecifiedParameterTypeError,
     UnspecifiedReturnTypeError,
 )
@@ -49,7 +46,7 @@ class Enforcer:
                         "Packed positional argument {!r} must be given a type "
                         "hint"
                     )
-                    raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
+                    raise UnspecifiedParameterTypeError(msg.format(name))
                 params.pop(name)
             elif param.kind == inspect.Parameter.VAR_KEYWORD:
                 self.packed_kwargs_name = name
@@ -60,7 +57,7 @@ class Enforcer:
                         "Packed keyword argument {!r} must be given a type "
                         "hint"
                     )
-                    raise UnspecifiedParameterTypeError(msg.format(name))#TODO:TEST
+                    raise UnspecifiedParameterTypeError(msg.format(name))
                 params.pop(name)
                 self.num_normal_keywords = len(params)
 
@@ -77,8 +74,10 @@ class Enforcer:
 
         unspecified = {key: UNSPECIFIED for key in params.keys() if key not in spec}
         if unspecified and require_args:
-            msg = "The following parameters must be given type hints: {!r}"
-            raise UnspecifiedParameterTypeError(msg.format(list(unspecified.keys())))
+            msg = "The following parameters of {!r} must be given type hints: {!r}"
+            raise UnspecifiedParameterTypeError(
+                msg.format(func.__name__, list(unspecified.keys()))
+            )
 
         spec.update(unspecified)
 
@@ -86,8 +85,8 @@ class Enforcer:
             self.returns = spec.pop("return")
         else:
             if require_return:
-                msg = "A return type hint must be specified."
-                raise UnspecifiedReturnTypeError(msg)
+                msg = "A return type hint must be specified for {!r}."
+                raise UnspecifiedReturnTypeError(msg.format(func.__name__))
             self.returns = UNSPECIFIED
 
         # Restore order of args
@@ -122,8 +121,7 @@ class Enforcer:
 
     def verify_args(self, passed_args, passed_kwargs):
         if self.ignored_self_name is not None:
-            # handle the rare case that self is passed as a kwarg
-            #TODO:test
+            # Handle the rare case that self is passed as a kwarg
             if self.ignored_self_name in passed_kwargs:
                 passed_kwargs = {
                     k: v for k, v in passed_kwargs.items()
