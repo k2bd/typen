@@ -22,6 +22,6 @@ setuptools.setup(
         "Topic :: Software Development",
     ],
     license="MIT",
-    install_requires=["traits", "numpy"],
+    install_requires=["traits"],
     python_requires='>=3.6',
 )

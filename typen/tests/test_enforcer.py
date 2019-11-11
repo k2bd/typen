@@ -1,8 +1,6 @@
 import unittest
 
-import numpy as np
 from traits.api import (
-    Array,
     Either,
     Enum,
     Float,
@@ -382,59 +380,6 @@ class TestEnforcerTraits(unittest.TestCase):
 
         with self.assertRaises(ReturnTypeError):
             enforcer.verify_result(other)
-
-    def test_validate_array(self):
-        # TODO: dtypes cannot be safely type checked currently.
-        # See enthought/traits#547
-
-        def example_function(
-                a: Array(dtype="float64", shape=(2, 2)),
-                b: Array(dtype="float64", shape=(2, None)),
-                c: Array(shape=(2, 2)),
-                d: Array(dtype="float64"),
-                e: Array(dtype="int64"),
-                ) -> Array(dtype="int64"):
-            pass
-        enforcer = Enforcer(example_function)
-
-        array_f22 = np.array([[1, 2], [3, 4]], dtype="float64")
-        array_f32 = np.array([[1, 2], [3, 4], [5, 6]], dtype="float64")
-        array_f23 = np.array([[1, 2, 3], [4, 5, 6]], dtype="float64")
-        array_i22 = np.array([[1, 2], [3, 4]], dtype="int64")
-
-        enforcer.verify_args(
-            [array_f22, array_f22, array_f22, array_f22, array_i22], {})
-
-        enforcer.verify_args(
-            [array_i22, array_f23, array_i22, array_i22, array_i22], {})
-        enforcer.verify_result(array_i22)
-
-        with self.assertRaises(ParameterTypeError) as err:
-            enforcer.verify_args(
-                [array_f22, array_f32, array_i22, array_f32, array_i22], {})
-
-        self.assertIn(
-            "The 'b' parameter of 'example_function'",
-            str(err.exception)
-        )
-
-        # with self.assertRaises(ParameterTypeError) as err:
-        #     enforcer.verify_args(
-        #         [array_f22, array_f22, array_f22, array_f22, array_f22], {})
-        # self.assertEqual(
-        #     "The 'e' parameter of 'example_function' could not be cast to an "
-        #     "array of dtype dtype('int64')",
-        #     str(err.exception)
-        # )
-
-        # with self.assertRaises(ReturnTypeError) as err:
-        #     enforcer.verify_result(array_f22)
-        #
-        # self.assertEqual(
-        #     "The return value of 'example_function' could not be cast to an "
-        #     "array of dtype dtype('int64')",
-        #     str(err.exception)
-        # )
 
     def test_validate_tuple(self):
         def example_function(a: Tuple(Str, Int)) -> Tuple(Int, Str):
