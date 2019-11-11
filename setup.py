@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="typen",
-    version="0.0.1",
+    version="0.0.2",
     author="Kevin Duff",
     author_email="kduff@enthought.com",
     description="Strong type hints with Traits",
