@@ -98,9 +98,6 @@ class Enforcer:
             if v.default is not inspect.Parameter.empty
         }
 
-        class FunctionSignature(HasTraits):
-            pass
-
         fs = FunctionSignature()
         rt = FunctionSignature()
 
@@ -223,6 +220,10 @@ class Enforcer:
                 msg.format(self.func.__name__, self.returns, value, type(value)))
             exception.return_value = value
             raise exception from None
+
+
+class FunctionSignature(HasTraits):
+    pass
 
 
 class Arg:
