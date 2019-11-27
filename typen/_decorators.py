@@ -101,4 +101,3 @@ class EnforceTypeHints:
             return result
 
         self.decorated_func = new_func
-
