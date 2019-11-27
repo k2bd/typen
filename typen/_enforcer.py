@@ -99,9 +99,6 @@ class Enforcer:
             if v.default is not inspect.Parameter.empty
         }
 
-        class FunctionSignature(HasTraits):
-            pass
-
         fs = FunctionSignature()
         rt = FunctionSignature()
 
@@ -236,6 +233,10 @@ def to_traitable(param_type):
     # are supported
 
     return param_type
+
+
+class FunctionSignature(HasTraits):
+    pass
 
 
 class Arg:
