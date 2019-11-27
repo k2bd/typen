@@ -2,6 +2,7 @@ import inspect
 
 from traits.api import HasTraits, TraitError
 
+from typen._typing import typing_to_trait
 from typen.exceptions import (
     ParameterTypeError,
     ReturnTypeError,
@@ -223,6 +224,18 @@ class Enforcer:
                 msg.format(self.func.__name__, self.returns, value, type(value)))
             exception.return_value = value
             raise exception from None
+
+
+def to_traitable(param_type):
+    """
+    Function to attempt to turn the input parameter type to a suitable Traits
+    type.
+    """
+    param_type = typing_to_trait(param_type)
+    # More conversion attempts can be made if more than just typing types
+    # are supported
+
+    return param_type
 
 
 class Arg:
