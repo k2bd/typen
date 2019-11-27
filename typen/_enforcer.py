@@ -90,10 +90,18 @@ class Enforcer:
                 raise UnspecifiedReturnTypeError(msg.format(func.__name__))
             self.returns = UNSPECIFIED
 
+        # Convert any non-trait type hints to traits
+        spec = {
+            k: to_traitable(v) for k, v in spec.items()
+        }
+        self.returns = to_traitable(self.returns)
+        self.packed_args_spec = to_traitable(self.packed_args_spec)
+        self.packed_kwargs_spec = to_traitable(self.packed_kwargs_spec)
+
         # Restore order of args
         self.args = [Arg(k, spec[k]) for k in params.keys()]
 
-        # Validate defaults
+        # Store defaults for validation
         self.default_kwargs = {
             k: v.default for k, v in params.items()
             if v.default is not inspect.Parameter.empty
