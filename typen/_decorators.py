@@ -5,14 +5,16 @@ from typen._enforcer import Enforcer
 
 def enforce_type_hints(func):
     """
-    Enforce type hints on the parameters and return types decorated function.
+    Enforce type hints on the parameters and return types of the decorated
+    function.
     """
     return EnforceTypeHints(func, require_args=False, require_return=False)
 
 
 def strict_type_hints(func):
     """
-    Enforce type hints on the parameters and return types decorated function.
+    Enforce type hints on the parameters and return types of the decorated
+    function.
 
     Also require type hints to be provided for all parmeters and the return
     value.
@@ -22,7 +24,8 @@ def strict_type_hints(func):
 
 def strict_parameter_hints(func):
     """
-    Enforce type hints on the parameters and return types decorated function.
+    Enforce type hints on the parameters and return types of the decorated
+    function.
 
     Also require type hints to be provided for all parameters.
 
@@ -34,7 +37,8 @@ def strict_parameter_hints(func):
 
 def strict_return_hint(func):
     """
-    Enforce type hints on the parameters and return types decorated function.
+    Enforce type hints on the parameters and return types of the decorated
+    function.
 
     Also require a type hint to be provided for the return type.
 
