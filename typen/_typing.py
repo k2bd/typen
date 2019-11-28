@@ -24,14 +24,13 @@ def typing_to_trait(arg_type):
     origin = arg_type.__origin__ or arg_type
 
     if origin in [typing.List, list]:
-        print(arg_type.__args__)
-        if arg_type.__args__ is not None and arg_type.__args__ is not typing.Any:
+        if arg_type.__args__ is not None and arg_type.__args__[0] is not typing.Any:
             contained = arg_type.__args__[0]
             return ValidatedList(typing_to_trait(contained))
         else:
             return traits_api.List()
     elif origin in [typing.Tuple, tuple]:
-        if arg_type.__args__ is not None and arg_type.__args__ is not typing.Any:
+        if arg_type.__args__ is not None:
             contained = [typing_to_trait(arg) for arg in arg_type.__args__]
             return traits_api.Tuple(*contained)
         else:
