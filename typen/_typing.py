@@ -24,6 +24,7 @@ def typing_to_trait(arg_type):
     origin = arg_type.__origin__ or arg_type
 
     if origin in [typing.List, list]:
+        print(arg_type.__args__)
         if arg_type.__args__ is not None and arg_type.__args__ is not typing.Any:
             contained = arg_type.__args__[0]
             return ValidatedList(typing_to_trait(contained))
