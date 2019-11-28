@@ -36,4 +36,4 @@ def typing_to_trait(arg_type):
         else:
             return traits_api.Tuple()
 
-    raise TypenError("Could not convert {} to trait".format(arg_type))
+    raise TypenError("Could not convert {} {} to trait".format(arg_type, arg_type.__origin__))
