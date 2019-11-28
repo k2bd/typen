@@ -3,6 +3,7 @@ import typing
 import traits.api as traits_api
 
 from typen.exceptions import TypenError
+from typen.traits import ValidatedList
 
 
 def typing_to_trait(arg_type):
@@ -36,15 +37,3 @@ def typing_to_trait(arg_type):
             return traits_api.Tuple()
 
     raise TypenError("Could not convert {} to trait".format(arg_type))
-
-
-class ValidatedList(traits_api.List):
-    """
-    Defines a list that does validation on the internal type
-    """
-
-    def validate(self, object, name, value):
-        value = super(ValidatedList, self).validate(object, name, value)
-
-        for item in value:
-            self.item_trait.validate(object, name, item)
