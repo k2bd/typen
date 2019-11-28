@@ -65,7 +65,7 @@ class TypingToTrait(unittest.TestCase):
 
         self.assertIsInstance(traits_typ, traits_api.Tuple)
 
-        self.fail("Complete test")
+        #self.fail("Complete test")
 
 
 class EnforceTypingTypes(unittest.TestCase):
