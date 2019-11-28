@@ -26,6 +26,7 @@ def typing_to_trait(arg_type):
     if origin in [typing.List, list]:
         if arg_type.__args__ is not None:
             contained = arg_type.__args__[0]
+            print(contained)
             return ValidatedList(typing_to_trait(contained))
         else:
             return traits_api.List()
