@@ -16,6 +16,30 @@ RETURN_EXEMPT = ["__init__"]
 
 
 class Enforcer:
+    """
+    This class is used to enforce type hints on a function.
+
+    Generally it should be used through a typen decorator.
+
+    Parameters
+    ----------
+    func : Callable
+        The function whose type hints should be enforced
+    require_args : bool
+        Require all parameter type hints to be specified
+    require_return : bool
+        Require the return type hint to be specified
+    ignore_self : bool
+        If type hints are required, ignore the self-reference paramter of
+        methods
+
+    Raises
+    ------
+    UnspecifiedParameterTypeError
+        If the parameter type hin is required but not provided
+    UnspecifiedReturnTypeError
+        If the return type hint is required but not provided
+    """
     def __init__(
             self, func,
             require_args=False,
@@ -29,18 +53,15 @@ class Enforcer:
             require_return = require_return and func.__name__ not in RETURN_EXEMPT
 
         # Support for annotations on arg and kwarg packing
-        self.packed_args_name = None
+        self.packed_args = None
         self.packed_args_pos = None
-        self.packed_args_spec = UNSPECIFIED
-        self.packed_kwargs_name = None
+        self.packed_kwargs = None
         self.num_normal_keywords = None
-        self.packed_kwargs_spec = UNSPECIFIED
         for i, (name, param) in enumerate(list(params.items())):
             if param.kind == inspect.Parameter.VAR_POSITIONAL:
-                self.packed_args_name = name
                 self.packed_args_pos = i
                 if name in spec:
-                    self.packed_args_spec = spec.pop(name)
+                    self.packed_args = Arg(name, spec.pop(name))
                 elif require_args:
                     msg = (
                         "Packed positional argument {!r} must be given a type "
@@ -49,9 +70,8 @@ class Enforcer:
                     raise UnspecifiedParameterTypeError(msg.format(name))
                 params.pop(name)
             elif param.kind == inspect.Parameter.VAR_KEYWORD:
-                self.packed_kwargs_name = name
                 if name in spec:
-                    self.packed_kwargs_spec = spec.pop(name)
+                    self.packed_kwargs = Arg(name, spec.pop(name))
                 elif require_args:
                     msg = (
                         "Packed keyword argument {!r} must be given a type "
@@ -84,15 +104,15 @@ class Enforcer:
         if "return" in spec.keys():
             self.returns = spec.pop("return")
         else:
+            self.returns = UNSPECIFIED
             if require_return:
                 msg = "A return type hint must be specified for {!r}."
                 raise UnspecifiedReturnTypeError(msg.format(func.__name__))
-            self.returns = UNSPECIFIED
 
         # Restore order of args
         self.args = [Arg(k, spec[k]) for k in params.keys()]
 
-        # Validate defaults
+        # Store defaults to be validated if they're used
         self.default_kwargs = {
             k: v.default for k, v in params.items()
             if v.default is not inspect.Parameter.empty
@@ -105,20 +125,35 @@ class Enforcer:
             fs.add_trait(arg.name, arg.type)
             arg.validator = fs.trait(arg.name)
 
-        if self.packed_args_spec is not UNSPECIFIED:
-            fs.add_trait(self.packed_args_name, self.packed_args_spec)
-            self.packed_args_validator = fs.trait(self.packed_args_name)
+        if self.packed_args is not None:
+            fs.add_trait(self.packed_args.name, self.packed_args.type)
+            self.packed_args.validator = fs.trait(self.packed_args.name)
 
-        if self.packed_kwargs_spec is not UNSPECIFIED:
-            fs.add_trait(self.packed_kwargs_name, self.packed_kwargs_spec)
-            self.packed_kwargs_validator = fs.trait(self.packed_kwargs_name)
+        if self.packed_kwargs is not None:
+            fs.add_trait(self.packed_kwargs.name, self.packed_kwargs.type)
+            self.packed_kwargs.validator = fs.trait(self.packed_kwargs.name)
 
         rt.add_trait("result", self.returns)
         self.result_validator = rt.trait("result")
 
     def verify_args(self, passed_args, passed_kwargs):
+        """
+        Validate input args to a function.
+
+        Parameters
+        ----------
+        passed_args : list
+            List of args passed to the function
+        passed_kwargs : dict
+            Dict of kwargs passed to the function
+
+        Raises
+        ------
+        ParameterTypeError
+            If an input parameter is not valid based on is type hint
+        """
         if self.ignored_self_name is not None:
-            # Handle the rare case that self is passed as a kwarg
+            # Handle the corner case that self is passed as a kwarg
             if self.ignored_self_name in passed_kwargs:
                 passed_kwargs = {
                     k: v for k, v in passed_kwargs.items()
@@ -129,10 +164,10 @@ class Enforcer:
 
         packed_args = []
         packed_kwargs = {}
-        if self.packed_args_name is not None:
+        if self.packed_args is not None:
             packed_args = passed_args[self.packed_args_pos:]
             passed_args = passed_args[:self.packed_args_pos]
-        if self.packed_kwargs_name is not None:
+        if self.packed_kwargs is not None:
             packed_kwargs = {
                 key: passed_kwargs[key] for key in
                 list(passed_kwargs.keys())[self.num_normal_keywords-1:]
@@ -167,10 +202,10 @@ class Enforcer:
                         arg.name, self.func.__name__, arg.type, value, type(value))
                 ) from None
 
-        if self.packed_args_spec is not UNSPECIFIED:
+        if self.packed_args is not None:
             for value in packed_args:
                 try:
-                    self.packed_args_validator.validate(None, None, value)
+                    self.packed_args.validator.validate(None, None, value)
                 except TraitError:
                     msg = (
                         "The {!r} parameters of {!r} must be {!r}, "
@@ -178,17 +213,17 @@ class Enforcer:
                     )
                     raise ParameterTypeError(
                         msg.format(
-                            self.packed_args_name,
+                            self.packed_args.name,
                             self.func.__name__,
-                            self.packed_args_spec,
+                            self.packed_args.type,
                             value,
                             type(value)
                         )
                     ) from None
-        if self.packed_kwargs_spec is not UNSPECIFIED:
+        if self.packed_kwargs is not None:
             for key, value in packed_kwargs.items():
                 try:
-                    self.packed_kwargs_validator.validate(None, None, value)
+                    self.packed_kwargs.validator.validate(None, None, value)
                 except TraitError:
                     msg = (
                         "The {!r} keywords of {!r} must have values of type "
@@ -196,9 +231,9 @@ class Enforcer:
                     )
                     raise ParameterTypeError(
                         msg.format(
-                            self.packed_kwargs_name,
+                            self.packed_kwargs.name,
                             self.func.__name__,
-                            self.packed_kwargs_spec,
+                            self.packed_kwargs.type,
                             key,
                             value,
                             type(value),
@@ -206,6 +241,21 @@ class Enforcer:
                     ) from None
 
     def verify_result(self, value):
+        """
+        Validate return value of the function call
+
+        Parameters
+        ----------
+        value : Any
+            The return value of the function
+
+        Raises
+        ------
+        ReturnTypeError
+            If the return value is of the wrong type according to the type
+            hint. Note that the computed return value is stored on the
+            ``return_value`` attribute of the exception.
+        """
         if self.returns is UNSPECIFIED:
             return
 
